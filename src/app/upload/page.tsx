@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Upload, FileSpreadsheet, User, ArrowRight, Table, MessageSquare } from "lucide-react";
+import { Upload, FileSpreadsheet, User, ArrowRight, Table, MessageSquare, CheckCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
+import Papa from "papaparse";
 
 export default function UploadPage() {
   const router = useRouter();
@@ -10,6 +11,8 @@ export default function UploadPage() {
   const [context, setContext] = useState("");
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isParsing, setIsParsing] = useState(false); // State for parsing animation
+  const [isParsed, setIsParsed] = useState(false); // State for success animation
   const [errors, setErrors] = useState<{ name?: string; context?: string; csv?: string; companyColumn?: string; emailColumn?: string; form?: string }>({});
   const [companyColumn, setCompanyColumn] = useState("A");
   const [emailColumn, setEmailColumn] = useState("B");
@@ -36,8 +39,7 @@ export default function UploadPage() {
     }
     
     try {
-      // Here you would normally upload the files to your server
-      // For demonstration, we'll simulate a delay
+      // Simulate a delay for demonstration
       await new Promise(resolve => setTimeout(resolve, 1500));
       
       // Redirect to edit page
@@ -60,16 +62,58 @@ export default function UploadPage() {
       return;
     }
     
-    if (file.type !== "text/csv" && !file.name.endsWith('.csv')) {
+    if (file.type !== "text/csv" && !file.name.endsWith(".csv")) {
       setErrors({ ...errors, csv: "Please upload a valid CSV file" });
       return;
     }
-    
-    setCsvFile(file);
-    if (errors.csv) {
-      const { csv, ...restErrors } = errors;
-      setErrors(restErrors);
-    }
+
+    setIsParsing(true); // Start parsing animation
+    setIsParsed(false); // Reset success state
+
+    // Parse the CSV file
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: (result) => {
+        const { data, errors: parseErrors } = result;
+
+        setIsParsing(false); // Stop parsing animation
+
+        // Check for parsing errors
+        if (parseErrors.length > 0) {
+          setErrors({ ...errors, csv: "Error parsing the CSV file" });
+          return;
+        }
+
+        // Validate required columns
+        const requiredColumns = ["Company Name", "Email"];
+        const headers = Object.keys(data[0] || {});
+        const missingColumns = requiredColumns.filter(
+          (col) => !headers.includes(col)
+        );
+
+        if (missingColumns.length > 0) {
+          setErrors({
+            ...errors,
+            csv: `Missing required columns: ${missingColumns.join(", ")}`,
+          });
+          return;
+        }
+
+        // If valid, set the file and clear errors
+        setCsvFile(file);
+        setIsParsed(true); // Trigger success animation
+        if (errors.csv) {
+          const { csv, ...restErrors } = errors;
+          setErrors(restErrors);
+        }
+      },
+      error: (error) => {
+        console.error("CSV Parsing Error:", error);
+        setErrors({ ...errors, csv: "Error reading the CSV file" });
+        setIsParsing(false); // Stop parsing animation
+      },
+    });
   };
 
   return (
@@ -141,7 +185,7 @@ export default function UploadPage() {
                 } bg-slate-900 p-4 text-center shadow-sm transition-all hover:border-purple-500 sm:p-6`}
                 onClick={() => document.getElementById("csv-upload")?.click()}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
+                  if (e.key === "Enter" || e.key === " ") {
                     document.getElementById("csv-upload")?.click();
                   }
                 }}
@@ -149,15 +193,31 @@ export default function UploadPage() {
                 tabIndex={0}
                 aria-label="Upload CSV file"
               >
-                <div>
-                  <Upload className="mx-auto mb-2 h-6 w-6 text-slate-400 sm:h-8 sm:w-8" />
-                  <p className="text-sm text-slate-300">
-                    {csvFile ? csvFile.name : "Upload your contacts (CSV)"}
-                  </p>
-                  <p className="mt-1 text-xs text-slate-500">
-                    Should contain company names and email addresses
-                  </p>
-                </div>
+                {isParsing ? (
+                  <div className="flex flex-col items-center">
+                    {/* Modern Loading Bar Animation */}
+                    <div className="relative w-48 h-2 bg-gray-700 rounded-full overflow-hidden">
+                      <div className="absolute left-0 top-0 h-full w-1/3 bg-purple-500 animate-loading-bar"></div>
+                    </div>
+                    <p className="mt-2 text-sm text-slate-300">Parsing CSV file...</p>
+                  </div>
+                ) : isParsed ? (
+                  <div className="flex flex-col items-center">
+                    {/* Success Animation */}
+                    <CheckCircle className="h-8 w-8 text-green-500" />
+                    <p className="mt-2 text-sm text-green-500">File parsed successfully!</p>
+                  </div>
+                ) : (
+                  <div>
+                    <Upload className="mx-auto mb-2 h-6 w-6 text-slate-400 sm:h-8 sm:w-8" />
+                    <p className="text-sm text-slate-300">
+                      {csvFile ? csvFile.name : "Upload your contacts (CSV)"}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      Should contain company names and email addresses
+                    </p>
+                  </div>
+                )}
                 <input
                   id="csv-upload"
                   type="file"
