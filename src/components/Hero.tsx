@@ -58,9 +58,19 @@ export function Hero() {
 						transition={{ duration: 0.3, delay: 1 }}
 						className="flex flex-wrap justify-center gap-4"
 					>
-						<button className="w-60 transform rounded-[10px] border border-white bg-transparent px-6 py-3 font-medium text-white shadow-[0_0_10px_rgba(147,51,234,0.5)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-white hover:text-black">
-							Get Started
+						<button
+							className="w-60 transform rounded-[10px] border !border-[#fdcf58] bg-transparent px-6 py-3 font-black uppercase text-transparent shadow-[0_0_10px_rgba(147,51,234,0.5)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-white hover:text-white !bg-clip-text !bg-cover !bg-center"
+							style={{
+								background:
+									"linear-gradient(to top left, #ff0000, #fdcf58)",
+							}}
+							type="submit"
+							name="action"
+							value="google"
+						>
+							Login with Google
 						</button>
+
 						<button className="w-60 transform rounded-[10px] border border-slate-700 bg-slate-800 px-6 py-3 font-medium text-white shadow-[0_0_10px_rgba(147,51,234,0.3)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-slate-700">
 							Learn More
 						</button>
