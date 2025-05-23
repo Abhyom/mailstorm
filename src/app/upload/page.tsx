@@ -240,43 +240,83 @@ export default function UploadPage() {
         }`}
       >
         {/* Progress indicator */}
-        <div className="max-w-lg mx-auto mb-16">
-          <div className="flex items-center justify-between relative">
-            {/* Progress line */}
-            <div className="absolute left-0 right-0 top-1/2 h-1 bg-gray-800 -translate-y-1/2 rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-gradient-to-r from-purple-600 to-pink-600 transition-all duration-500 ease-out" 
-                style={{ width: step === 1 ? '0%' : step === 2 ? '50%' : '100%' }}
-              ></div>
-            </div>
-            
-            {/* Step circles */}
-            {[1, 2, 3].map((stepNumber) => (
-              <div key={stepNumber} className="relative">
-                <div className="flex flex-col items-center">
-                  <div 
-                    className={`flex items-center justify-center w-12 h-12 rounded-full z-10 transition-all duration-300 ${
-                      step === stepNumber 
-                        ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white ring-4 ring-purple-900/30" 
-                        : step > stepNumber 
-                          ? "bg-gradient-to-r from-green-600 to-green-500 text-white shadow-lg shadow-green-900/20" 
-                          : "bg-slate-800 text-gray-400 shadow-inner shadow-black/50"
-                    }`}
-                  >
-                    {step > stepNumber ? <CheckCircle className="w-6 h-6" /> : stepNumber}
-                  </div>
-                  <span 
-                    className={`mt-3 text-center whitespace-nowrap text-sm font-medium transition-colors duration-300 ${
-                      step === stepNumber ? "text-purple-400" : step > stepNumber ? "text-green-400" : "text-gray-500"
-                    }`}
-                  >
-                    {stepNumber === 1 ? "Upload CSV" : stepNumber === 2 ? "Map Columns" : "Review & Submit"}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
+<div className="max-w-2xl mx-auto mb-4 mt-12">
+  {/* Step labels */}
+  <div className="flex justify-between mb-6">
+    {[
+      { num: 1, label: "Upload CSV" },
+      { num: 2, label: "Map Columns" }, 
+      { num: 3, label: "Review & Submit" }
+    ].map(({ num, label }) => (
+      <div key={num} className="flex flex-col items-start">
+        <span className={`
+          text-sm font-medium transition-colors duration-300
+          ${step === num 
+            ? "text-white" 
+            : step > num 
+              ? "text-slate-300" 
+              : "text-slate-500"
+          }
+        `}>
+          {label}
+        </span>
+        <span className={`
+          text-xs mt-1 font-black uppercase tracking-wider transition-colors duration-300
+          ${step === num 
+            ? "text-purple-400" 
+            : step > num 
+              ? "text-slate-400" 
+              : "text-slate-600"
+          }
+        `}>
+          Step {num}
+        </span>
+      </div>
+    ))}
+  </div>
+  
+  {/* Progress bar */}
+  <div className="relative">
+    {/* Background track */}
+    <div className="w-full h-3 bg-slate-800 rounded-[10px] overflow-hidden shadow-[0_0_10px_rgba(147,51,234,0.3)] border border-slate-700">
+      {/* Active progress */}
+      <div 
+        className="h-full transition-all duration-700 ease-out rounded-[10px]"
+        style={{ 
+          width: step === 1 ? '33.33%' : step === 2 ? '66.66%' : '100%',
+          background: 'linear-gradient(to right, #9333ea, #ff0000, #fdcf58)'
+        }}
+      ></div>
+    </div>
+    
+    {/* Step markers */}
+    <div className="absolute inset-0 flex justify-between items-center px-2">
+      {[1, 2, 3].map((stepNumber) => (
+        <div key={stepNumber} className={`
+          w-5 h-5 rounded-full border-2 transition-all duration-300 flex items-center justify-center
+          ${step >= stepNumber 
+            ? "border-purple-400 bg-slate-900 shadow-[0_0_10px_rgba(147,51,234,0.5)]" 
+            : "border-slate-600 bg-slate-800"
+          }
+        `}>
+          {step > stepNumber && (
+            <CheckCircle className="w-3 h-3 text-purple-400" strokeWidth={3} />
+          )}
+          {step === stepNumber && (
+            <div className="w-2 h-2 rounded-full bg-purple-400 animate-pulse"></div>
+          )}
         </div>
+      ))}
+    </div>
+  </div>
+  
+  {/* Progress text indicator */}
+  <div className="mt-4 text-center">
+    <span className="text-xs font-black uppercase tracking-wider text-slate-400">
+      Progress: {step}/3
+    </span>
+  </div>
+</div>
 
         <div
           className="rounded-2xl border border-purple-500/20 bg-black/40 p-4 backdrop-blur-sm shadow-[0_0_30px_rgba(147,51,234,0.2)] sm:p-6 md:p-8"
