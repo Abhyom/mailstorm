@@ -12,7 +12,7 @@ import {
   ChevronRight,
   X,
   ArrowUpRight,
-  Info
+  Info,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Papa from "papaparse";
@@ -26,13 +26,26 @@ export default function UploadPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isParsing, setIsParsing] = useState(false);
   const [isParsed, setIsParsed] = useState(false);
-  const [errors, setErrors] = useState<{ name?: string; context?: string; csv?: string; form?: string }>({});
+  const [errors, setErrors] = useState<{
+    name?: string;
+    context?: string;
+    csv?: string;
+    form?: string;
+  }>({});
   const [columns, setColumns] = useState<string[]>([]);
   const [csvData, setCsvData] = useState<any[]>([]);
   const [step, setStep] = useState(1);
-  const [suggestedMappings, setSuggestedMappings] = useState<{ companyName?: string; email?: string }>({});
-  const [columnMapping, setColumnMapping] = useState<{ companyName?: string; email?: string }>({});
-  const [previewData, setPreviewData] = useState<{ company: string; email: string }[]>([]);
+  const [suggestedMappings, setSuggestedMappings] = useState<{
+    companyName?: string;
+    email?: string;
+  }>({});
+  const [columnMapping, setColumnMapping] = useState<{
+    companyName?: string;
+    email?: string;
+  }>({});
+  const [previewData, setPreviewData] = useState<
+    { company: string; email: string }[]
+  >([]);
 
   // Page load animation
   useEffect(() => {
@@ -43,13 +56,18 @@ export default function UploadPage() {
   useEffect(() => {
     if (columns.length > 0) {
       const suggestions = {
-        companyName: findBestMatch(columns, ["company", "organization", "business", "name"]),
+        companyName: findBestMatch(columns, [
+          "company",
+          "organization",
+          "business",
+          "name",
+        ]),
         email: findBestMatch(columns, ["email", "mail", "e-mail", "contact"]),
       };
-      
+
       setSuggestedMappings(suggestions);
       setColumnMapping(suggestions);
-      
+
       // If we have good suggestions, automatically prepare preview data
       if (suggestions.companyName && suggestions.email) {
         generatePreviewData(suggestions);
@@ -59,20 +77,22 @@ export default function UploadPage() {
 
   // Find the best matching column name from the CSV
   const findBestMatch = (columns: string[], keywords: string[]) => {
-    const lowerCaseColumns = columns.map(col => col.toLowerCase());
-    
+    const lowerCaseColumns = columns.map((col) => col.toLowerCase());
+
     // First try exact matches
     for (const keyword of keywords) {
-      const exactMatch = lowerCaseColumns.findIndex(col => col === keyword);
+      const exactMatch = lowerCaseColumns.findIndex((col) => col === keyword);
       if (exactMatch !== -1) return columns[exactMatch];
     }
-    
+
     // Then try partial matches
     for (const keyword of keywords) {
-      const partialMatch = lowerCaseColumns.findIndex(col => col.includes(keyword));
+      const partialMatch = lowerCaseColumns.findIndex((col) =>
+        col.includes(keyword)
+      );
       if (partialMatch !== -1) return columns[partialMatch];
     }
-    
+
     return undefined;
   };
 
@@ -84,11 +104,17 @@ export default function UploadPage() {
     setErrors({});
 
     // Validation
-    const newErrors: { name?: string; context?: string; csv?: string; form?: string } = {};
+    const newErrors: {
+      name?: string;
+      context?: string;
+      csv?: string;
+      form?: string;
+    } = {};
     if (!name.trim()) newErrors.name = "Name is required";
     if (!context.trim()) newErrors.context = "Context is required";
     if (!csvFile) newErrors.csv = "CSV file is required";
-    if (!columnMapping.companyName) newErrors.csv = "Please map a column to 'Company Name'";
+    if (!columnMapping.companyName)
+      newErrors.csv = "Please map a column to 'Company Name'";
     if (!columnMapping.email) newErrors.csv = "Please map a column to 'Email'";
 
     if (Object.keys(newErrors).length > 0) {
@@ -148,10 +174,10 @@ export default function UploadPage() {
         setColumns(headers);
         setCsvData(data);
         setIsParsed(true);
-        
+
         // Automatically advance to mapping step
         setStep(2);
-        
+
         if (errors.csv) {
           const { csv, ...restErrors } = errors;
           setErrors(restErrors);
@@ -165,28 +191,34 @@ export default function UploadPage() {
     });
   };
 
-  const handleColumnMappingChange = (field: "companyName" | "email", value: string) => {
+  const handleColumnMappingChange = (
+    field: "companyName" | "email",
+    value: string
+  ) => {
     const newMapping = {
       ...columnMapping,
       [field]: value,
     };
-    
+
     setColumnMapping(newMapping);
-    
+
     // Generate preview data with the new mapping
     if (newMapping.companyName && newMapping.email) {
       generatePreviewData(newMapping);
     }
   };
-  
-  const generatePreviewData = (mapping: { companyName?: string; email?: string }) => {
+
+  const generatePreviewData = (mapping: {
+    companyName?: string;
+    email?: string;
+  }) => {
     if (!mapping.companyName || !mapping.email || csvData.length === 0) return;
-    
-    const preview = csvData.slice(0, 3).map(row => ({
+
+    const preview = csvData.slice(0, 3).map((row) => ({
       company: row[mapping.companyName!] || "N/A",
-      email: row[mapping.email!] || "N/A"
+      email: row[mapping.email!] || "N/A",
     }));
-    
+
     setPreviewData(preview);
   };
 
@@ -194,29 +226,29 @@ export default function UploadPage() {
   const handleContinue = () => {
     // Reset errors first
     setErrors({});
-    
+
     // For step 1, validate name and context
     if (step === 1) {
       const newErrors: { name?: string; context?: string; csv?: string } = {};
-      
+
       if (!name.trim()) {
         newErrors.name = "Your name is required";
       }
-      
+
       if (!context.trim()) {
         newErrors.context = "Email context is required";
       }
-      
+
       if (!csvFile) {
         newErrors.csv = "Please upload a CSV file";
       }
-      
+
       // If there are errors, show them and don't proceed
       if (Object.keys(newErrors).length > 0) {
         setErrors(newErrors);
         return;
       }
-      
+
       // No errors, proceed to next step
       setStep(2);
     }
@@ -234,95 +266,110 @@ export default function UploadPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-black via-purple-950 to-black overflow-x-hidden">
       {/* Page load animation wrapper */}
-      <div 
+      <div
         className={`w-full max-w-4xl px-4 py-8 md:py-16 transition-all duration-1000 ease-out ${
           pageLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"
         }`}
       >
         {/* Progress indicator */}
-<div className="max-w-2xl mx-auto mb-4 mt-12">
-  {/* Step labels */}
-  <div className="flex justify-between mb-6">
-    {[
-      { num: 1, label: "Upload CSV" },
-      { num: 2, label: "Map Columns" }, 
-      { num: 3, label: "Review & Submit" }
-    ].map(({ num, label }) => (
-      <div key={num} className="flex flex-col items-start">
-        <span className={`
+        <div className="max-w-2xl mx-auto mb-4 mt-12">
+          {/* Step labels */}
+          <div className="flex justify-between mb-6">
+            {[
+              { num: 1, label: "Upload CSV" },
+              { num: 2, label: "Map Columns" },
+              { num: 3, label: "Review & Submit" },
+            ].map(({ num, label }) => (
+              <div key={num} className="flex flex-col items-start">
+                <span
+                  className={`
           text-sm font-medium transition-colors duration-300
-          ${step === num 
-            ? "text-white" 
-            : step > num 
-              ? "text-slate-300" 
+          ${
+            step === num
+              ? "text-white"
+              : step > num
+              ? "text-slate-300"
               : "text-slate-500"
           }
-        `}>
-          {label}
-        </span>
-        <span className={`
+        `}
+                >
+                  {label}
+                </span>
+                <span
+                  className={`
           text-xs mt-1 font-black uppercase tracking-wider transition-colors duration-300
-          ${step === num 
-            ? "text-purple-400" 
-            : step > num 
-              ? "text-slate-400" 
+          ${
+            step === num
+              ? "text-purple-400"
+              : step > num
+              ? "text-slate-400"
               : "text-slate-600"
           }
-        `}>
-          Step {num}
-        </span>
-      </div>
-    ))}
-  </div>
-  
-  {/* Progress bar */}
-  <div className="relative">
-    {/* Background track */}
-    <div className="w-full h-3 bg-slate-800 rounded-[10px] overflow-hidden shadow-[0_0_10px_rgba(147,51,234,0.3)] border border-slate-700">
-      {/* Active progress */}
-      <div 
-        className="h-full transition-all duration-700 ease-out rounded-[10px]"
-        style={{ 
-          width: step === 1 ? '33.33%' : step === 2 ? '66.66%' : '100%',
-          background: 'linear-gradient(to right, #9333ea, #ff0000, #fdcf58)'
-        }}
-      ></div>
-    </div>
-    
-    {/* Step markers */}
-    <div className="absolute inset-0 flex justify-between items-center px-2">
-      {[1, 2, 3].map((stepNumber) => (
-        <div key={stepNumber} className={`
+        `}
+                >
+                  Step {num}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          {/* Progress bar */}
+          <div className="relative">
+            {/* Background track */}
+            <div className="w-full h-3 bg-slate-800 rounded-[10px] overflow-hidden shadow-[0_0_10px_rgba(147,51,234,0.3)] border border-slate-700">
+              {/* Active progress */}
+              <div
+                className="h-full transition-all duration-700 ease-out rounded-[10px]"
+                style={{
+                  width: step === 1 ? "33.33%" : step === 2 ? "66.66%" : "100%",
+                  background:
+                    "linear-gradient(to right, #9333ea, #ff0000, #fdcf58)",
+                }}
+              ></div>
+            </div>
+
+            {/* Step markers */}
+            <div className="absolute inset-0 flex justify-between items-center px-2">
+              {[1, 2, 3].map((stepNumber) => (
+                <div
+                  key={stepNumber}
+                  className={`
           w-5 h-5 rounded-full border-2 transition-all duration-300 flex items-center justify-center
-          ${step >= stepNumber 
-            ? "border-purple-400 bg-slate-900 shadow-[0_0_10px_rgba(147,51,234,0.5)]" 
-            : "border-slate-600 bg-slate-800"
+          ${
+            step >= stepNumber
+              ? "border-purple-400 bg-slate-900 shadow-[0_0_10px_rgba(147,51,234,0.5)]"
+              : "border-slate-600 bg-slate-800"
           }
-        `}>
-          {step > stepNumber && (
-            <CheckCircle className="w-3 h-3 text-purple-400" strokeWidth={3} />
-          )}
-          {step === stepNumber && (
-            <div className="w-2 h-2 rounded-full bg-purple-400 animate-pulse"></div>
-          )}
+        `}
+                >
+                  {step > stepNumber && (
+                    <CheckCircle
+                      className="w-3 h-3 text-purple-400"
+                      strokeWidth={3}
+                    />
+                  )}
+                  {step === stepNumber && (
+                    <div className="w-2 h-2 rounded-full bg-purple-400 animate-pulse"></div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Progress text indicator */}
+          <div className="mt-4 text-center">
+            <span className="text-xs font-black uppercase tracking-wider text-slate-400">
+              Progress: {step}/3
+            </span>
+          </div>
         </div>
-      ))}
-    </div>
-  </div>
-  
-  {/* Progress text indicator */}
-  <div className="mt-4 text-center">
-    <span className="text-xs font-black uppercase tracking-wider text-slate-400">
-      Progress: {step}/3
-    </span>
-  </div>
-</div>
 
         <div
           className="rounded-2xl border border-purple-500/20 bg-black/40 p-4 backdrop-blur-sm shadow-[0_0_30px_rgba(147,51,234,0.2)] sm:p-6 md:p-8"
-          style={{ 
-            background: "linear-gradient(145deg, rgba(0,0,0,0.9), rgba(15,3,30,0.8))",
-            boxShadow: "0 10px 40px -15px rgba(139, 92, 246, 0.3)"
+          style={{
+            background:
+              "linear-gradient(145deg, rgba(0,0,0,0.9), rgba(15,3,30,0.8))",
+            boxShadow: "0 10px 40px -15px rgba(139, 92, 246, 0.3)",
           }}
         >
           <h1 className="mb-8 text-center text-2xl font-semibold text-gray-200 sm:text-3xl relative">
@@ -331,13 +378,19 @@ export default function UploadPage() {
             </span>
           </h1>
 
-
           <form onSubmit={handleSubmit}>
             {/* Step 1: Upload CSV */}
-            <div className={`transition-all duration-500 ${step === 1 ? "block" : "hidden"}`}>
+            <div
+              className={`transition-all duration-500 ${
+                step === 1 ? "block" : "hidden"
+              }`}
+            >
               {/* Name Input */}
               <div className="mb-5">
-                <label htmlFor="name-input" className="mb-2 block text-sm font-medium text-slate-300 flex items-center">
+                <label
+                  htmlFor="name-input"
+                  className="mb-2 block text-sm font-medium text-slate-300 flex items-center"
+                >
                   <User className="mr-2 inline h-4 w-4 text-purple-400" />
                   Your Name <span className="text-pink-500 ml-1">*</span>
                 </label>
@@ -347,7 +400,9 @@ export default function UploadPage() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   className={`w-full rounded-lg border ${
-                    errors.name ? "border-red-500 ring-1 ring-red-500" : "border-slate-700"
+                    errors.name
+                      ? "border-red-500 ring-1 ring-red-500"
+                      : "border-slate-700"
                   } bg-slate-900/60 p-3 text-white shadow-sm backdrop-blur-sm transition-all focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500`}
                   placeholder="Enter your full name"
                 />
@@ -361,7 +416,10 @@ export default function UploadPage() {
 
               {/* Context Input */}
               <div className="mb-5">
-                <label htmlFor="context-input" className="mb-2 block text-sm font-medium text-slate-300 flex items-center">
+                <label
+                  htmlFor="context-input"
+                  className="mb-2 block text-sm font-medium text-slate-300 flex items-center"
+                >
                   <MessageSquare className="mr-2 inline h-4 w-4 text-purple-400" />
                   Email Context <span className="text-pink-500 ml-1">*</span>
                 </label>
@@ -370,7 +428,9 @@ export default function UploadPage() {
                   value={context}
                   onChange={(e) => setContext(e.target.value)}
                   className={`w-full rounded-lg border ${
-                    errors.context ? "border-red-500 ring-1 ring-red-500" : "border-slate-700"
+                    errors.context
+                      ? "border-red-500 ring-1 ring-red-500"
+                      : "border-slate-700"
                   } bg-slate-900/60 p-3 text-white shadow-sm backdrop-blur-sm transition-all focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500`}
                   placeholder="e.g., Applying for software engineering internship opportunities"
                   rows={3}
@@ -382,20 +442,28 @@ export default function UploadPage() {
                   </div>
                 )}
                 <p className="mt-1 text-xs text-slate-500">
-                  Describe what you're emailing about (internship application, job opportunity, etc.)
+                  Describe what you're emailing about (internship application,
+                  job opportunity, etc.)
                 </p>
               </div>
 
               {/* CSV Upload */}
               <div className="mb-6 relative">
-                <label htmlFor="csv-upload" className="mb-2 block text-sm font-medium text-slate-300 flex items-center">
+                <label
+                  htmlFor="csv-upload"
+                  className="mb-2 block text-sm font-medium text-slate-300 flex items-center"
+                >
                   <FileSpreadsheet className="mr-2 inline h-4 w-4 text-purple-400" />
                   Contact List (CSV)
                 </label>
-                
+
                 <div
                   className={`group flex flex-col cursor-pointer items-center justify-center rounded-lg border-2 border-dashed ${
-                    errors.csv ? "border-red-500/50" : csvFile ? "border-purple-500/50" : "border-slate-700/50"
+                    errors.csv
+                      ? "border-red-500/50"
+                      : csvFile
+                      ? "border-purple-500/50"
+                      : "border-slate-700/50"
                   } bg-slate-900/30 backdrop-blur-sm p-8 text-center shadow-sm transition-all hover:border-purple-400/80 hover:bg-slate-900/50`}
                   onClick={() => document.getElementById("csv-upload")?.click()}
                   onKeyDown={(e) => {
@@ -414,14 +482,18 @@ export default function UploadPage() {
                         <div className="absolute inset-0 rounded-full border-4 border-purple-500/20"></div>
                         <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-purple-500 animate-spin"></div>
                       </div>
-                      <p className="text-sm text-slate-300">Processing your file...</p>
+                      <p className="text-sm text-slate-300">
+                        Processing your file...
+                      </p>
                     </div>
                   ) : isParsed ? (
                     <div className="flex flex-col items-center py-2">
                       <div className="bg-green-500/10 rounded-full p-3 mb-2">
                         <CheckCircle className="h-8 w-8 text-green-500" />
                       </div>
-                      <p className="text-sm font-medium text-green-400">{csvFile?.name}</p>
+                      <p className="text-sm font-medium text-green-400">
+                        {csvFile?.name}
+                      </p>
                       <p className="mt-1 text-xs text-slate-400">
                         {csvData.length} rows, {columns.length} columns detected
                       </p>
@@ -446,7 +518,9 @@ export default function UploadPage() {
                         <Upload className="h-8 w-8 text-purple-400 group-hover:text-purple-300" />
                       </div>
                       <p className="text-sm font-medium text-slate-300 group-hover:text-white">
-                        {csvFile ? csvFile.name : "Drag and drop or click to upload"}
+                        {csvFile
+                          ? csvFile.name
+                          : "Drag and drop or click to upload"}
                       </p>
                       <p className="mt-1 text-xs text-slate-500">
                         CSV file with company names and email addresses
@@ -481,10 +555,16 @@ export default function UploadPage() {
             </div>
 
             {/* Step 2: CSV Column Mapping */}
-            <div className={`transition-all duration-500 ${step === 2 ? "block" : "hidden"}`}>
+            <div
+              className={`transition-all duration-500 ${
+                step === 2 ? "block" : "hidden"
+              }`}
+            >
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-medium text-white">Map Your CSV Columns</h2>
+                  <h2 className="text-lg font-medium text-white">
+                    Map Your CSV Columns
+                  </h2>
                   <p className="text-xs text-purple-400">
                     <CheckCircle className="inline h-3 w-3 mr-1" />
                     {csvFile?.name}
@@ -493,20 +573,29 @@ export default function UploadPage() {
 
                 <div className="rounded-lg border border-slate-700 bg-slate-900/60 backdrop-blur-sm p-5 shadow-sm mb-6">
                   <p className="text-sm text-slate-400 mb-4">
-                    We've automatically detected the best column mappings from your CSV. Please verify or adjust them below.
+                    We've automatically detected the best column mappings from
+                    your CSV. Please verify or adjust them below.
                   </p>
 
                   <div className="space-y-4">
                     {/* Company Name Mapping */}
                     <div>
-                      <label htmlFor="company-column" className="mb-1 block text-sm font-medium text-slate-300">
+                      <label
+                        htmlFor="company-column"
+                        className="mb-1 block text-sm font-medium text-slate-300"
+                      >
                         Company Name Column
                       </label>
                       <div className="relative">
                         <select
                           id="company-column"
                           value={columnMapping.companyName || ""}
-                          onChange={(e) => handleColumnMappingChange("companyName", e.target.value)}
+                          onChange={(e) =>
+                            handleColumnMappingChange(
+                              "companyName",
+                              e.target.value
+                            )
+                          }
                           className="w-full rounded border border-slate-600 bg-black/50 p-2 pl-3 pr-10 text-sm text-white appearance-none focus:border-purple-500 focus:outline-none"
                         >
                           <option value="" disabled>
@@ -519,7 +608,11 @@ export default function UploadPage() {
                           ))}
                         </select>
                         <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-400">
-                          <svg className="h-4 w-4" fill="none" viewBox="0 0 20 20">
+                          <svg
+                            className="h-4 w-4"
+                            fill="none"
+                            viewBox="0 0 20 20"
+                          >
                             <path
                               stroke="currentColor"
                               strokeLinecap="round"
@@ -540,14 +633,19 @@ export default function UploadPage() {
 
                     {/* Email Mapping */}
                     <div>
-                      <label htmlFor="email-column" className="mb-1 block text-sm font-medium text-slate-300">
+                      <label
+                        htmlFor="email-column"
+                        className="mb-1 block text-sm font-medium text-slate-300"
+                      >
                         Email Address Column
                       </label>
                       <div className="relative">
                         <select
                           id="email-column"
                           value={columnMapping.email || ""}
-                          onChange={(e) => handleColumnMappingChange("email", e.target.value)}
+                          onChange={(e) =>
+                            handleColumnMappingChange("email", e.target.value)
+                          }
                           className="w-full rounded border border-slate-600 bg-black/50 p-2 pl-3 pr-10 text-sm text-white appearance-none focus:border-purple-500 focus:outline-none"
                         >
                           <option value="" disabled>
@@ -560,7 +658,11 @@ export default function UploadPage() {
                           ))}
                         </select>
                         <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-400">
-                          <svg className="h-4 w-4" fill="none" viewBox="0 0 20 20">
+                          <svg
+                            className="h-4 w-4"
+                            fill="none"
+                            viewBox="0 0 20 20"
+                          >
                             <path
                               stroke="currentColor"
                               strokeLinecap="round"
@@ -584,27 +686,39 @@ export default function UploadPage() {
                 {/* Preview Section */}
                 {previewData.length > 0 && (
                   <div className="rounded-lg border border-slate-700 bg-slate-900/60 backdrop-blur-sm p-5 shadow-sm">
-                    <h3 className="text-sm font-medium text-slate-300 mb-3">Preview</h3>
+                    <h3 className="text-sm font-medium text-slate-300 mb-3">
+                      Preview
+                    </h3>
                     <div className="overflow-x-auto">
                       <table className="min-w-full">
                         <thead>
                           <tr>
-                            <th className="px-3 py-2 text-left text-xs font-medium text-slate-400">Company Name</th>
-                            <th className="px-3 py-2 text-left text-xs font-medium text-slate-400">Email Address</th>
+                            <th className="px-3 py-2 text-left text-xs font-medium text-slate-400">
+                              Company Name
+                            </th>
+                            <th className="px-3 py-2 text-left text-xs font-medium text-slate-400">
+                              Email Address
+                            </th>
                           </tr>
                         </thead>
                         <tbody>
                           {previewData.map((item, idx) => (
                             <tr key={idx} className="border-t border-slate-800">
-                              <td className="px-3 py-2 text-xs text-slate-300">{item.company}</td>
-                              <td className="px-3 py-2 text-xs text-slate-300">{item.email}</td>
+                              <td className="px-3 py-2 text-xs text-slate-300">
+                                {item.company}
+                              </td>
+                              <td className="px-3 py-2 text-xs text-slate-300">
+                                {item.email}
+                              </td>
                             </tr>
                           ))}
                         </tbody>
                       </table>
                     </div>
                     <p className="mt-3 text-xs text-slate-500">
-                      {csvData.length > 3 ? `Showing ${previewData.length} of ${csvData.length} rows` : ""}
+                      {csvData.length > 3
+                        ? `Showing ${previewData.length} of ${csvData.length} rows`
+                        : ""}
                     </p>
                   </div>
                 )}
@@ -616,7 +730,11 @@ export default function UploadPage() {
                     onClick={() => setStep(1)}
                     className="flex items-center px-4 py-2 text-sm text-slate-300 hover:text-white"
                   >
-                    <svg className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="none">
+                    <svg
+                      className="h-4 w-4 mr-1"
+                      viewBox="0 0 20 20"
+                      fill="none"
+                    >
                       <path
                         stroke="currentColor"
                         strokeLinecap="round"
@@ -632,7 +750,7 @@ export default function UploadPage() {
                     onClick={handleContinue}
                     className="flex items-center px-5 py-2 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg text-white text-sm font-medium transition-all hover:scale-[1.03] focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-1 focus:ring-offset-black"
                   >
-                    Continue 
+                    Continue
                     <ChevronRight className="ml-1 h-4 w-4" />
                   </button>
                 </div>
@@ -640,58 +758,99 @@ export default function UploadPage() {
             </div>
 
             {/* Step 3: Review & Submit */}
-            <div className={`transition-all duration-500 ${step === 3 ? "block" : "hidden"}`}>
+            <div
+              className={`transition-all duration-500 ${
+                step === 3 ? "block" : "hidden"
+              }`}
+            >
               <div className="mb-6">
-                <h2 className="text-lg font-medium text-white mb-4">Review and Generate</h2>
-                
+                <h2 className="text-lg font-medium text-white mb-4">
+                  Review and Generate
+                </h2>
+
                 <div className="space-y-4 mb-6">
                   <div className="rounded-lg border border-slate-700 bg-slate-900/60 backdrop-blur-sm p-4">
-                    <h3 className="text-xs uppercase tracking-wider text-slate-500">Campaign Details</h3>
+                    <h3 className="text-xs uppercase tracking-wider text-slate-500">
+                      Campaign Details
+                    </h3>
                     <div className="mt-2 space-y-2">
                       <div className="flex justify-between">
-                        <span className="text-sm text-slate-400">Your Name:</span>
-                        <span className="text-sm text-white font-medium">{name}</span>
+                        <span className="text-sm text-slate-400">
+                          Your Name:
+                        </span>
+                        <span className="text-sm text-white font-medium">
+                          {name}
+                        </span>
                       </div>
                       <div className="flex justify-between items-start">
                         <span className="text-sm text-slate-400">Context:</span>
-                        <span className="text-sm text-white font-medium text-right max-w-[60%]">{context}</span>
+                        <span className="text-sm text-white font-medium text-right max-w-[60%]">
+                          {context}
+                        </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm text-slate-400">File:</span>
-                        <span className="text-sm text-white font-medium">{csvFile?.name}</span>
+                        <span className="text-sm text-white font-medium">
+                          {csvFile?.name}
+                        </span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-sm text-slate-400">Recipients:</span>
-                        <span className="text-sm text-white font-medium">{csvData.length} companies</span>
+                        <span className="text-sm text-slate-400">
+                          Recipients:
+                        </span>
+                        <span className="text-sm text-white font-medium">
+                          {csvData.length} companies
+                        </span>
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="rounded-lg border border-slate-700 bg-slate-900/60 backdrop-blur-sm p-4">
-                    <h3 className="text-xs uppercase tracking-wider text-slate-500">Column Mapping</h3>
+                    <h3 className="text-xs uppercase tracking-wider text-slate-500">
+                      Column Mapping
+                    </h3>
                     <div className="mt-2 space-y-2">
                       <div className="flex justify-between">
-                        <span className="text-sm text-slate-400">Company Name:</span>
-                        <span className="text-sm text-white font-medium">{columnMapping.companyName}</span>
+                        <span className="text-sm text-slate-400">
+                          Company Name:
+                        </span>
+                        <span className="text-sm text-white font-medium">
+                          {columnMapping.companyName}
+                        </span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-sm text-slate-400">Email Address:</span>
-                        <span className="text-sm text-white font-medium">{columnMapping.email}</span>
+                        <span className="text-sm text-slate-400">
+                          Email Address:
+                        </span>
+                        <span className="text-sm text-white font-medium">
+                          {columnMapping.email}
+                        </span>
                       </div>
                     </div>
                   </div>
-                  
+
                   {/* Sample from the CSV */}
                   {previewData.length > 0 && (
                     <div className="rounded-lg border border-slate-700 bg-slate-900/60 backdrop-blur-sm p-4">
                       <div className="flex justify-between items-center mb-2">
-                        <h3 className="text-xs uppercase tracking-wider text-slate-500">Sample Recipients</h3>
-                        <span className="text-xs text-slate-500">{previewData.length} of {csvData.length}</span>
+                        <h3 className="text-xs uppercase tracking-wider text-slate-500">
+                          Sample Recipients
+                        </h3>
+                        <span className="text-xs text-slate-500">
+                          {previewData.length} of {csvData.length}
+                        </span>
                       </div>
                       {previewData.map((item, idx) => (
-                        <div key={idx} className="py-2 border-t border-slate-800 flex justify-between">
-                          <span className="text-sm text-white">{item.company}</span>
-                          <span className="text-sm text-slate-400">{item.email}</span>
+                        <div
+                          key={idx}
+                          className="py-2 border-t border-slate-800 flex justify-between"
+                        >
+                          <span className="text-sm text-white">
+                            {item.company}
+                          </span>
+                          <span className="text-sm text-slate-400">
+                            {item.email}
+                          </span>
                         </div>
                       ))}
                     </div>
@@ -713,7 +872,11 @@ export default function UploadPage() {
                     onClick={() => setStep(2)}
                     className="flex items-center px-4 py-2 text-sm text-slate-300 hover:text-white"
                   >
-                    <svg className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="none">
+                    <svg
+                      className="h-4 w-4 mr-1"
+                      viewBox="0 0 20 20"
+                      fill="none"
+                    >
                       <path
                         stroke="currentColor"
                         strokeLinecap="round"
@@ -724,7 +887,7 @@ export default function UploadPage() {
                     </svg>
                     Back
                   </button>
-                  
+
                   {/* Submit Button */}
                   <button
                     type="submit"
@@ -735,7 +898,8 @@ export default function UploadPage() {
                       <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
                     ) : (
                       <>
-                        Generate Sample Email <ArrowUpRight className="ml-2 h-4 w-4" />
+                        Generate Sample Email{" "}
+                        <ArrowUpRight className="ml-2 h-4 w-4" />
                       </>
                     )}
                   </button>
@@ -752,7 +916,9 @@ export default function UploadPage() {
           </div>
           <div>
             <p className="text-xs text-slate-300">
-              Your CSV file should contain company names and email addresses. We'll help you map these columns and generate personalized emails for each recipient.
+              Your CSV file should contain company names and email addresses.
+              We'll help you map these columns and generate personalized emails
+              for each recipient.
             </p>
           </div>
         </div>
