@@ -12,7 +12,7 @@ import {
 	ChevronRight,
 	X,
 	ArrowUpRight,
-	Info,
+	Info,,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Papa from "papaparse";
@@ -27,25 +27,38 @@ export default function UploadPage() {
 	const [isParsing, setIsParsing] = useState(false);
 	const [isParsed, setIsParsed] = useState(false);
 	const [errors, setErrors] = useState<{
+   
 		name?: string;
+   
 		context?: string;
+   
 		csv?: string;
+   
 		form?: string;
+ ;
 	}>({});
 	const [columns, setColumns] = useState<string[]>([]);
 	const [csvData, setCsvData] = useState<any[]>([]);
 	const [step, setStep] = useState(1);
 	const [suggestedMappings, setSuggestedMappings] = useState<{
+   
 		companyName?: string;
+   
 		email?: string;
+ ;
 	}>({});
 	const [columnMapping, setColumnMapping] = useState<{
+   
 		companyName?: string;
+   
 		email?: string;
+ ;
 	}>({});
 	const [previewData, setPreviewData] = useState<
-		{ company: string; email: string }[]
-	>([]);
+		
+    { company: string; email: string }[]
+	
+  >([]);
 
 	// Page load animation
 	useEffect(() => {
