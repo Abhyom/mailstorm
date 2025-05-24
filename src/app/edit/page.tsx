@@ -56,25 +56,6 @@ export default function EditPage() {
 		setPreviews(updatedPreviews);
 	}, [subject, bodyTemplate, campaignData]);
 
-	// Watch for changes in subject, bodyTemplate, or campaignData and update previews
-	useEffect(() => {
-		if (!campaignData || !subject || !bodyTemplate) return;
-
-		const updatedPreviews = campaignData.csvData.map((recipient) => {
-			const companyName =
-				recipient[campaignData.columnMapping.companyName!];
-			const emailAddress = recipient[campaignData.columnMapping.email!];
-			const body = bodyTemplate.replace(/{companyName}/g, companyName);
-			return {
-				company: companyName,
-				email: emailAddress,
-				subject,
-				body,
-			};
-		});
-
-		setPreviews(updatedPreviews);
-	}, [subject, bodyTemplate, campaignData]);
 	// Initialize Tiptap editor for email body
 	const editor = useEditor({
 		extensions: [StarterKit],
@@ -91,32 +72,6 @@ export default function EditPage() {
 		},
 	});
 
-	// Convert plain text to HTML for Tiptap
-	const convertPlainTextToHTML = (text: string) => {
-		if (!text) return "";
-		// Split the text into lines, trim each line, and filter out empty lines
-		const lines = text
-			.split("\n")
-			.map((line) => line.trim())
-			.filter((line) => line);
-		// Wrap each line in a <p> tag, unless it already contains HTML tags
-		const htmlLines = lines.map((line) =>
-			line.includes("<") ? line : `<p>${line}</p>`
-		);
-		return htmlLines.join("");
-	};
-
-	// Update editor content when bodyTemplate changes
-	useEffect(() => {
-		if (editor && bodyTemplate) {
-			console.log("Updating editor with bodyTemplate:", bodyTemplate);
-			// Convert plain text to HTML
-			const htmlContent = convertPlainTextToHTML(bodyTemplate);
-			console.log("Converted HTML content:", htmlContent);
-			editor.commands.setContent(htmlContent);
-			console.log("Editor content after update:", editor.getHTML());
-		}
-	}, [bodyTemplate, editor]);
 	// Convert plain text to HTML for Tiptap
 	const convertPlainTextToHTML = (text: string) => {
 		if (!text) return "";
@@ -351,245 +306,310 @@ Format the email as plain text, starting with the subject line, followed by a bl
 							: "Generate Emails"}
 					</button>
 
-					{/* Preview All Emails */}
-					<div className="mb-6">
-						{previews.length > 0 && (
-							<div className="rounded-[12px] border border-slate-700 bg-slate-900/60 backdrop-blur-sm p-4">
-								<h3 className="text-sm uppercase tracking-wider text-slate-500 mb-3">
-									Email Previews
-								</h3>
-								<Tabs defaultValue="0" className="w-full">
-									<TabsList className="flex flex-wrap gap-1 mb-6 border border-slate-700 p-2 rounded-[12px] bg-transparent">
-										{previews.map((preview, index) => (
-											<TabsTrigger
-												key={index}
-												value={index.toString()}
-												className="px-4 py-2 rounded-[8px] text-sm font-medium text-slate-300 border border-slate-700 bg-transparent transition-all duration-300 hover:bg-slate-700/50 hover:text-white data-[state=active]:border-purple-500 data-[state=active]:text-white data-[state=active]:shadow-sm"
+					{/* Combined Email Previews and Editor Tabs */}
+					{(previews.length > 0 || subject || bodyTemplate) && (
+						<div className="mb-6 rounded-[12px] border border-slate-700 bg-slate-900/60 backdrop-blur-sm p-4">
+							<Tabs defaultValue="preview" className="w-full">
+								<TabsList className="mb-6 flex justify-center gap-4">
+									<TabsTrigger
+										value="preview"
+										className="w-60 transform rounded-[10px] border !border-[#fdcf58] bg-transparent px-6 py-3 font-black uppercase text-transparent shadow-[0_0_10px_rgba(147,51,234,0.5)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-white hover:text-white !bg-clip-text !bg-cover !bg-center data-[state=active]:scale-105 data-[state=active]:shadow-[0_0_15px_rgba(147,51,234,0.7)]"
+										style={{
+											background:
+												"linear-gradient(to top left, #ff0000, #fdcf58)",
+										}}
+									>
+										Preview Emails
+									</TabsTrigger>
+									<TabsTrigger
+										value="edit"
+										className="w-60 transform rounded-[10px] border !border-[#fdcf58] bg-transparent px-6 py-3 font-black uppercase text-transparent shadow-[0_0_10px_rgba(147,51,234,0.5)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-white hover:text-white !bg-clip-text !bg-cover !bg-center data-[state=active]:scale-105 data-[state=active]:shadow-[0_0_15px_rgba(147,51,234,0.7)]"
+										style={{
+											background:
+												"linear-gradient(to top left, #ff0000, #fdcf58)",
+										}}
+									>
+										Edit Template
+									</TabsTrigger>
+								</TabsList>
+
+								{/* Email Previews Tab */}
+								<TabsContent value="preview">
+									{previews.length > 0 && (
+										<div>
+											<h3 className="text-sm uppercase tracking-wider text-slate-500 mb-3">
+												Email Previews
+											</h3>
+											<Tabs
+												defaultValue="0"
+												className="w-full"
 											>
-												{preview.company}
-											</TabsTrigger>
-										))}
-									</TabsList>
-									{previews.map((preview, index) => (
-										<TabsContent
-											key={index}
-											value={index.toString()}
-											className="overflow-hidden"
-										>
-											<div className="p-6 bg-slate-900/80 rounded-[12px] border border-slate-700 text-sm text-white font-sans shadow-sm shadow-purple-500/20">
-												<p className="text-sm text-slate-400 mb-2">
-													<strong>Subject:</strong>{" "}
-													{preview.subject}
-												</p>
-												<p className="text-sm text-slate-400 mb-4">
-													<strong>To:</strong>{" "}
-													{preview.email}
-												</p>
-												<div
-													className="text-sm text-white leading-relaxed"
-													dangerouslySetInnerHTML={{
-														__html: preview.body,
-													}}
-												/>
-												{attachments.length > 0 && (
-													<div className="mt-4">
-														<p className="text-sm text-slate-400 mb-2">
-															Attachments:
-														</p>
-														<div className="flex flex-wrap gap-2">
-															{attachments.map(
-																(file, idx) => (
-																	<div
-																		key={
-																			idx
-																		}
-																		className="flex items-center bg-slate-800 rounded-[8px] px-3 py-1 text-sm text-white"
-																	>
-																		{
-																			file.name
-																		}
+												<TabsList className="mb-6">
+													{previews.map(
+														(preview, index) => (
+															<TabsTrigger
+																key={index}
+																value={index.toString()}
+															>
+																{
+																	preview.company
+																}
+															</TabsTrigger>
+														)
+													)}
+												</TabsList>
+												{previews.map(
+													(preview, index) => (
+														<TabsContent
+															key={index}
+															value={index.toString()}
+															className="overflow-hidden"
+														>
+															<div className="p-6 bg-slate-900/80 rounded-[12px] border border-slate-700 text-sm text-white font-sans shadow-sm shadow-purple-500/20">
+																<p className="text-sm text-slate-400 mb-2">
+																	<strong>
+																		Subject:
+																	</strong>{" "}
+																	{
+																		preview.subject
+																	}
+																</p>
+																<p className="text-sm text-slate-400 mb-4">
+																	<strong>
+																		To:
+																	</strong>{" "}
+																	{
+																		preview.email
+																	}
+																</p>
+																<div
+																	className="text-sm text-white leading-relaxed"
+																	dangerouslySetInnerHTML={{
+																		__html: preview.body,
+																	}}
+																/>
+																{attachments.length >
+																	0 && (
+																	<div className="mt-4">
+																		<p className="text-sm text-slate-400 mb-2">
+																			Attachments:
+																		</p>
+																		<div className="flex flex-wrap gap-2">
+																			{attachments.map(
+																				(
+																					file,
+																					idx
+																				) => (
+																					<div
+																						key={
+																							idx
+																						}
+																						className="flex items-center bg-slate-800 rounded-[8px] px-3 py-1 text-sm text-white"
+																					>
+																						{
+																							file.name
+																						}
+																					</div>
+																				)
+																			)}
+																		</div>
 																	</div>
-																)
-															)}
-														</div>
+																)}
+															</div>
+														</TabsContent>
+													)
+												)}
+											</Tabs>
+										</div>
+									)}
+								</TabsContent>
+
+								{/* Email Template Editor Tab */}
+								<TabsContent value="edit">
+									{(subject || bodyTemplate) && (
+										<div>
+											{error && (
+												<div className="mb-4 rounded-[12px] bg-red-500/10 p-3 flex items-center text-sm text-red-500">
+													<svg
+														className="h-4 w-4 mr-2"
+														fill="none"
+														viewBox="0 0 24 24"
+														stroke="currentColor"
+													>
+														<path
+															strokeLinecap="round"
+															strokeLinejoin="round"
+															strokeWidth="2"
+															d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+														/>
+													</svg>
+													{error}
+												</div>
+											)}
+											<h3 className="text-sm uppercase tracking-wider text-slate-500 mb-3">
+												Email Template Editor
+											</h3>
+
+											{/* Subject Line Input */}
+											<div className="mb-4">
+												<label className="text-sm text-slate-400 mb-1 block">
+													Subject
+												</label>
+												<input
+													type="text"
+													value={subject}
+													onChange={(e) =>
+														setSubject(
+															e.target.value
+														)
+													}
+													className="w-full rounded-[12px] border border-slate-700 bg-slate-900/60 p-3 text-white shadow-sm backdrop-blur-sm focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
+													placeholder="Enter email subject"
+												/>
+											</div>
+
+											{/* Tiptap Editor for Body */}
+											<div className="mb-4">
+												<label className="text-sm text-slate-400 mb-1 block">
+													Body
+												</label>
+												<div className="mb-2 flex flex-wrap gap-2">
+													<Button
+														variant="outline"
+														size="sm"
+														onClick={() =>
+															editor
+																?.chain()
+																.focus()
+																.toggleBold()
+																.run()
+														}
+														className={
+															editor?.isActive(
+																"bold"
+															)
+																? "bg-purple-600 text-white"
+																: "border-slate-700 text-white hover:bg-slate-700/80"
+														}
+													>
+														Bold
+													</Button>
+													<Button
+														variant="outline"
+														size="sm"
+														onClick={() =>
+															editor
+																?.chain()
+																.focus()
+																.toggleItalic()
+																.run()
+														}
+														className={
+															editor?.isActive(
+																"italic"
+															)
+																? "bg-purple-600 text-white"
+																: "border-slate-700 text-white hover:bg-slate-700/80"
+														}
+													>
+														Italic
+													</Button>
+													<Button
+														variant="outline"
+														size="sm"
+														onClick={() =>
+															editor
+																?.chain()
+																.focus()
+																.toggleBulletList()
+																.run()
+														}
+														className={
+															editor?.isActive(
+																"bulletList"
+															)
+																? "bg-purple-600 text-white"
+																: "border-slate-700 text-white hover:bg-slate-700/80"
+														}
+													>
+														Bullet List
+													</Button>
+													<Button
+														variant="outline"
+														size="sm"
+														onClick={() =>
+															editor
+																?.chain()
+																.focus()
+																.toggleOrderedList()
+																.run()
+														}
+														className={
+															editor?.isActive(
+																"orderedList"
+															)
+																? "bg-purple-600 text-white"
+																: "border-slate-700 text-white hover:bg-slate-700/80"
+														}
+													>
+														Ordered List
+													</Button>
+												</div>
+												<EditorContent
+													editor={editor}
+												/>
+											</div>
+
+											{/* File Attachments */}
+											<div className="mb-4">
+												<label className="text-sm text-slate-400 mb-1 block">
+													Attachments
+												</label>
+												<div className="flex items-center">
+													<label className="flex items-center cursor-pointer rounded-[12px] border border-slate-700 bg-slate-900/60 px-4 py-2 text-white shadow-sm hover:bg-slate-700/80">
+														<Paperclip className="h-4 w-4 mr-2" />
+														Attach Files
+														<input
+															type="file"
+															multiple
+															onChange={
+																handleAttachFiles
+															}
+															className="hidden"
+														/>
+													</label>
+												</div>
+												{attachments.length > 0 && (
+													<div className="mt-2 flex flex-wrap gap-2">
+														{attachments.map(
+															(file, index) => (
+																<div
+																	key={index}
+																	className="flex items-center bg-slate-800 rounded-[8px] px-3 py-1 text-sm text-white"
+																>
+																	{file.name}
+																	<button
+																		onClick={() =>
+																			handleRemoveAttachment(
+																				index
+																			)
+																		}
+																		className="ml-2 text-red-500 hover:text-red-400"
+																	>
+																		<X className="h-4 w-4" />
+																	</button>
+																</div>
+															)
+														)}
 													</div>
 												)}
 											</div>
-										</TabsContent>
-									))}
-								</Tabs>
-							</div>
-						)}
-					</div>
-
-					{/* Email Template Editor */}
-					<div className="mb-6">
-						{error && (
-							<div className="mb-4 rounded-[12px] bg-red-500/10 p-3 flex items-center text-sm text-red-500">
-								<svg
-									className="h-4 w-4 mr-2"
-									fill="none"
-									viewBox="0 0 24 24"
-									stroke="currentColor"
-								>
-									<path
-										strokeLinecap="round"
-										strokeLinejoin="round"
-										strokeWidth="2"
-										d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-									/>
-								</svg>
-								{error}
-							</div>
-						)}
-
-						{(subject || bodyTemplate) && (
-							<div className="rounded-[12px] border border-slate-700 bg-slate-900/60 backdrop-blur-sm p-4">
-								<h3 className="text-sm uppercase tracking-wider text-slate-500 mb-3">
-									Email Template Editor
-								</h3>
-
-								{/* Subject Line Input */}
-								<div className="mb-4">
-									<label className="text-sm text-slate-400 mb-1 block">
-										Subject
-									</label>
-									<input
-										type="text"
-										value={subject}
-										onChange={(e) =>
-											setSubject(e.target.value)
-										}
-										className="w-full rounded-[12px] border border-slate-700 bg-slate-900/60 p-3 text-white shadow-sm backdrop-blur-sm focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
-										placeholder="Enter email subject"
-									/>
-								</div>
-
-								{/* Tiptap Editor for Body */}
-								<div className="mb-4">
-									<label className="text-sm text-slate-400 mb-1 block">
-										Body
-									</label>
-									<div className="mb-2 flex flex-wrap gap-2">
-										<Button
-											variant="outline"
-											size="sm"
-											onClick={() =>
-												editor
-													?.chain()
-													.focus()
-													.toggleBold()
-													.run()
-											}
-											className={
-												editor?.isActive("bold")
-													? "bg-purple-600 text-white"
-													: "border-slate-700 text-white hover:bg-slate-700/80"
-											}
-										>
-											Bold
-										</Button>
-										<Button
-											variant="outline"
-											size="sm"
-											onClick={() =>
-												editor
-													?.chain()
-													.focus()
-													.toggleItalic()
-													.run()
-											}
-											className={
-												editor?.isActive("italic")
-													? "bg-purple-600 text-white"
-													: "border-slate-700 text-white hover:bg-slate-700/80"
-											}
-										>
-											Italic
-										</Button>
-										<Button
-											variant="outline"
-											size="sm"
-											onClick={() =>
-												editor
-													?.chain()
-													.focus()
-													.toggleBulletList()
-													.run()
-											}
-											className={
-												editor?.isActive("bulletList")
-													? "bg-purple-600 text-white"
-													: "border-slate-700 text-white hover:bg-slate-700/80"
-											}
-										>
-											Bullet List
-										</Button>
-										<Button
-											variant="outline"
-											size="sm"
-											onClick={() =>
-												editor
-													?.chain()
-													.focus()
-													.toggleOrderedList()
-													.run()
-											}
-											className={
-												editor?.isActive("orderedList")
-													? "bg-purple-600 text-white"
-													: "border-slate-700 text-white hover:bg-slate-700/80"
-											}
-										>
-											Ordered List
-										</Button>
-									</div>
-									<EditorContent editor={editor} />
-								</div>
-
-								{/* File Attachments */}
-								<div className="mb-4">
-									<label className="text-sm text-slate-400 mb-1 block">
-										Attachments
-									</label>
-									<div className="flex items-center">
-										<label className="flex items-center cursor-pointer rounded-[12px] border border-slate-700 bg-slate-900/60 px-4 py-2 text-white shadow-sm hover:bg-slate-700/80">
-											<Paperclip className="h-4 w-4 mr-2" />
-											Attach Files
-											<input
-												type="file"
-												multiple
-												onChange={handleAttachFiles}
-												className="hidden"
-											/>
-										</label>
-									</div>
-									{attachments.length > 0 && (
-										<div className="mt-2 flex flex-wrap gap-2">
-											{attachments.map((file, index) => (
-												<div
-													key={index}
-													className="flex items-center bg-slate-800 rounded-[8px] px-3 py-1 text-sm text-white"
-												>
-													{file.name}
-													<button
-														onClick={() =>
-															handleRemoveAttachment(
-																index
-															)
-														}
-														className="ml-2 text-red-500 hover:text-red-400"
-													>
-														<X className="h-4 w-4" />
-													</button>
-												</div>
-											))}
 										</div>
 									)}
-								</div>
-							</div>
-						)}
-					</div>
+								</TabsContent>
+							</Tabs>
+						</div>
+					)}
 
 					{/* Navigation Buttons */}
 					<div className="flex items-center justify-between">

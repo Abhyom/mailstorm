@@ -5,7 +5,6 @@ import { useSession, signIn, signOut } from "next-auth/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation"; // Import usePathname
 import Image from "next/image";
-import Image from "next/image";
 
 export function Navbar() {
 	const { data: session, status } = useSession();
