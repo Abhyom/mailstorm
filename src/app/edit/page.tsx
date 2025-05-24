@@ -239,7 +239,7 @@ Format the email as plain text, starting with the subject line, followed by a bl
 
   return (
     <div className="mt-6 flex min-h-screen items-center justify-center bg-gradient-to-br from-black via-purple-950 to-black overflow-x-hidden">
-      <div className="w-full max-w-4xl px-4 py-8 md:py-16">
+      <div className=" w-full max-w-4xl px-4 py-8 md:py-16">
         <div
           className="rounded-2xl border border-purple-500/20 bg-black/40 p-4 backdrop-blur-sm shadow-[0_0_30px_rgba(147,51,234,0.2)] sm:p-6 md:p-8"
           style={{

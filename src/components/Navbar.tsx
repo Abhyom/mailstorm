@@ -22,7 +22,7 @@ export function Navbar() {
           href="/"
           className="flex items-center space-x-2 group transition-all duration-300"
         >
-          <div className="relative flex items-center justify-center">
+          <div className="relative flex items-center justify-center h-4 w-14 overflow-hidden">
             {/* Main logo with tilt and effects */}
             <Image
               src="/logo.png" // Place your PNG in the public folder
