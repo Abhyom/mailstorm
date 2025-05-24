@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Send, RefreshCw, Paperclip, X, Eye } from "lucide-react";
+import { Loader2, Send, RefreshCw, Paperclip, X } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
@@ -35,16 +35,39 @@ export default function EditPage() {
 		}
 	}, [router]);
 
+	// Watch for changes in subject, bodyTemplate, or campaignData and update previews
+	useEffect(() => {
+		if (!campaignData || !subject || !bodyTemplate) return;
+
+		const updatedPreviews = campaignData.csvData.map((recipient) => {
+			const companyName =
+				recipient[campaignData.columnMapping.companyName!];
+			const emailAddress = recipient[campaignData.columnMapping.email!];
+			const body = bodyTemplate.replace(/{companyName}/g, companyName);
+			console.log("Preview for", companyName, ":", body);
+			return {
+				company: companyName,
+				email: emailAddress,
+				subject,
+				body,
+			};
+		});
+
+		setPreviews(updatedPreviews);
+	}, [subject, bodyTemplate, campaignData]);
+
 	// Initialize Tiptap editor for email body
 	const editor = useEditor({
 		extensions: [StarterKit],
-		content: "", // Initially empty; we'll set content dynamically
+		content: "",
 		onUpdate: ({ editor }) => {
-			setBodyTemplate(editor.getHTML());
+			const html = editor.getHTML();
+			console.log("Editor updated, HTML:", html);
+			setBodyTemplate(html);
 		},
 		editorProps: {
 			attributes: {
-				class: "prose prose-invert max-w-none p-4 min-h-[200px] bg-slate-900/60 border border-slate-700 rounded-lg focus:outline-none focus:ring-1 focus:ring-purple-500",
+				class: "prose prose-invert max-w-none p-4 min-h-[200px] bg-slate-900/60 border border-slate-700 rounded-[12px] focus:outline-none focus:ring-1 focus:ring-purple-500",
 			},
 		},
 	});
@@ -52,29 +75,8 @@ export default function EditPage() {
 	// Convert plain text to HTML for Tiptap
 	const convertPlainTextToHTML = (text: string) => {
 		if (!text) return "";
-		// Split the text into lines, trim each line, and filter out empty lines
-		const lines = text
-			.split("\n")
-			.map((line) => line.trim())
-			.filter((line) => line);
-		// Wrap each line in a <p> tag, unless it already contains HTML tags
-		const htmlLines = lines.map((line) =>
-			line.includes("<") ? line : `<p>${line}</p>`
-		);
-		return htmlLines.join("");
+		return text.replace(/\n/g, "<br>");
 	};
-
-	// Update editor content when bodyTemplate changes
-	useEffect(() => {
-		if (editor && bodyTemplate) {
-			console.log("Updating editor with bodyTemplate:", bodyTemplate);
-			// Convert plain text to HTML
-			const htmlContent = convertPlainTextToHTML(bodyTemplate);
-			console.log("Converted HTML content:", htmlContent);
-			editor.commands.setContent(htmlContent);
-			console.log("Editor content after update:", editor.getHTML());
-		}
-	}, [bodyTemplate, editor]);
 
 	// Function to generate an email template using OpenRouter's DeepSeek R1 API
 	const generateEmail = async () => {
@@ -95,7 +97,6 @@ export default function EditPage() {
 		setPreviews([]);
 
 		try {
-			// Construct the messages for OpenRouter API (DeepSeek R1)
 			const messages = [
 				{
 					role: "system",
@@ -114,7 +115,6 @@ Format the email as plain text, starting with the subject line, followed by a bl
 				},
 			];
 
-			// Call the API route
 			const response = await fetch("/api/generate-email", {
 				method: "POST",
 				headers: {
@@ -138,14 +138,12 @@ Format the email as plain text, starting with the subject line, followed by a bl
 				throw new Error(data.error || "Failed to generate email.");
 			}
 
-			// Parse the generated email into subject and body
 			const emailContent = data.email;
-			console.log("Raw API response email:", emailContent);
-			// Split by newlines and trim any leading/trailing whitespace
-			const lines = emailContent.split("\n").map((line) => line.trim());
-			console.log("Split lines:", lines);
+			console.log("Raw API response:", emailContent);
+			const lines = emailContent
+				.split("\n")
+				.map((line: string) => line.trim());
 
-			// Find the subject line more flexibly
 			let subjectLine = "Untitled";
 			let subjectIndex = -1;
 			for (let i = 0; i < lines.length; i++) {
@@ -157,10 +155,8 @@ Format the email as plain text, starting with the subject line, followed by a bl
 				}
 			}
 
-			// If subject line was found, extract the body starting after the subject and the blank line
 			let bodyLines;
 			if (subjectIndex !== -1) {
-				// Skip the subject line and the blank line after it (if it exists)
 				const startIndex =
 					subjectIndex + 1 < lines.length &&
 					lines[subjectIndex + 1] === ""
@@ -168,9 +164,8 @@ Format the email as plain text, starting with the subject line, followed by a bl
 						: subjectIndex + 1;
 				bodyLines = lines.slice(startIndex).join("\n").trim();
 			} else {
-				// If no subject line is found, treat the first non-empty line as the subject
 				const firstNonEmptyLineIndex = lines.findIndex(
-					(line) => line !== ""
+					(line: string) => line !== ""
 				);
 				if (firstNonEmptyLineIndex !== -1) {
 					subjectLine = lines[firstNonEmptyLineIndex];
@@ -187,11 +182,20 @@ Format the email as plain text, starting with the subject line, followed by a bl
 
 			console.log("Parsed subject:", subjectLine);
 			console.log("Parsed body:", bodyLines);
+			const htmlBody = convertPlainTextToHTML(bodyLines);
+			console.log("Generated HTML body:", htmlBody);
 			setSubject(subjectLine);
-			setBodyTemplate(bodyLines);
+			setBodyTemplate(htmlBody);
+			if (editor) {
+				editor.commands.setContent(htmlBody);
+				console.log("Editor initialized with:", htmlBody);
+			}
 		} catch (err) {
 			setError(
-				err.message || "Failed to generate email. Please try again."
+				(err instanceof Error
+					? err.message
+					: "An unknown error occurred.") ||
+					"Failed to generate email. Please try again."
 			);
 			console.error("OpenRouter API error:", err);
 		} finally {
@@ -203,34 +207,11 @@ Format the email as plain text, starting with the subject line, followed by a bl
 	const handleAttachFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const files = Array.from(e.target.files || []);
 		setAttachments((prev) => [...prev, ...files]);
-		e.target.value = ""; // Reset the file input
+		e.target.value = "";
 	};
 
 	const handleRemoveAttachment = (index: number) => {
 		setAttachments((prev) => prev.filter((_, i) => i !== index));
-	};
-
-	// Generate previews for all companies
-	const handlePreviewAll = () => {
-		if (!campaignData || !subject || !bodyTemplate) {
-			setError("Please generate and edit an email template first.");
-			return;
-		}
-
-		const generatedPreviews = campaignData.csvData.map((recipient) => {
-			const companyName =
-				recipient[campaignData.columnMapping.companyName!];
-			const emailAddress = recipient[campaignData.columnMapping.email!];
-			const body = bodyTemplate.replace(/{companyName}/g, companyName);
-			return {
-				company: companyName,
-				email: emailAddress,
-				subject,
-				body,
-			};
-		});
-
-		setPreviews(generatedPreviews);
 	};
 
 	if (!campaignData) {
@@ -242,10 +223,26 @@ Format the email as plain text, starting with the subject line, followed by a bl
 	}
 
 	return (
-		<div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-black via-purple-950 to-black overflow-x-hidden">
+		<div className="mt-6 flex min-h-screen items-center justify-center bg-gradient-to-br from-black via-purple-950 to-black overflow-x-hidden">
+			<style>{`
+        div::-webkit-scrollbar {
+          width: 4px;
+        }
+        div::-webkit-scrollbar-track {
+          background: rgba(30, 41, 59, 0.5); /* slate-800/50 */
+          border-radius: 2px;
+        }
+        div::-webkit-scrollbar-thumb {
+          background: #9333ea; /* purple-500 */
+          border-radius: 2px;
+        }
+        div::-webkit-scrollbar-thumb:hover {
+          background: #a855f7; /* purple-400 */
+        }
+      `}</style>
 			<div className="w-full max-w-4xl px-4 py-8 md:py-16">
 				<div
-					className="rounded-2xl border border-purple-500/20 bg-black/40 p-4 backdrop-blur-sm shadow-[0_0_30px_rgba(147,51,234,0.2)] sm:p-6 md:p-8"
+					className="rounded-[16px] border border-purple-500/20 bg-black/40 p-4 backdrop-blur-sm shadow-[0_0_30px_rgba(147,51,234,0.2)] sm:p-6 md:p-8"
 					style={{
 						background:
 							"linear-gradient(145deg, rgba(0,0,0,0.9), rgba(15,3,30,0.8))",
@@ -259,7 +256,7 @@ Format the email as plain text, starting with the subject line, followed by a bl
 					</h1>
 
 					{/* Campaign Summary */}
-					<div className="mb-6 rounded-lg border border-slate-700 bg-slate-900/60 backdrop-blur-sm p-4">
+					<div className="mb-6 rounded-[12px] border border-slate-700 bg-slate-900/60 backdrop-blur-sm p-4">
 						<h2 className="text-lg font-medium text-white mb-4">
 							Campaign Summary
 						</h2>
@@ -276,9 +273,9 @@ Format the email as plain text, starting with the subject line, followed by a bl
 								<span className="text-sm text-slate-400">
 									Context:
 								</span>
-								<span className="text-sm text-white font-medium max-w-[60%] text-right">
+								<div className="text-sm text-white font-medium max-w-[60%] text-right max-h-[120px] overflow-y-auto pr-2 leading-relaxed scrollbar scrollbar-thin scrollbar-track-slate-800/50 scrollbar-thumb-purple-500 hover:scrollbar-thumb-purple-400">
 									{campaignData.context}
-								</span>
+								</div>
 							</div>
 							<div className="flex justify-between">
 								<span className="text-sm text-slate-400">
@@ -291,25 +288,99 @@ Format the email as plain text, starting with the subject line, followed by a bl
 						</div>
 					</div>
 
+					{/* Generate Email Button */}
+					<button
+						onClick={generateEmail}
+						disabled={isGenerating}
+						className="flex items-center justify-center w-full rounded-[12px] bg-gradient-to-r from-purple-600 to-pink-600 px-5 py-3 font-medium text-white shadow-lg shadow-purple-500/30 transition-all hover:shadow-purple-500/50 hover:scale-[1.02] disabled:opacity-70 mb-6"
+					>
+						{isGenerating ? (
+							<Loader2 className="h-5 w-5 animate-spin mr-2" />
+						) : (
+							<RefreshCw className="h-5 w-5 mr-2" />
+						)}
+						{isGenerating
+							? "Generating..."
+							: subject || bodyTemplate
+							? "Regenerate Emails"
+							: "Generate Emails"}
+					</button>
+
+					{/* Preview All Emails */}
+					<div className="mb-6">
+						{previews.length > 0 && (
+							<div className="rounded-[12px] border border-slate-700 bg-slate-900/60 backdrop-blur-sm p-4">
+								<h3 className="text-sm uppercase tracking-wider text-slate-500 mb-3">
+									Email Previews
+								</h3>
+								<Tabs defaultValue="0" className="w-full">
+									<TabsList className="flex flex-wrap gap-1 mb-6 border border-slate-700 p-2 rounded-[12px] bg-transparent">
+										{previews.map((preview, index) => (
+											<TabsTrigger
+												key={index}
+												value={index.toString()}
+												className="px-4 py-2 rounded-[8px] text-sm font-medium text-slate-300 border border-slate-700 bg-transparent transition-all duration-300 hover:bg-slate-700/50 hover:text-white data-[state=active]:border-purple-500 data-[state=active]:text-white data-[state=active]:shadow-sm"
+											>
+												{preview.company}
+											</TabsTrigger>
+										))}
+									</TabsList>
+									{previews.map((preview, index) => (
+										<TabsContent
+											key={index}
+											value={index.toString()}
+											className="overflow-hidden"
+										>
+											<div className="p-6 bg-slate-900/80 rounded-[12px] border border-slate-700 text-sm text-white font-sans shadow-sm shadow-purple-500/20">
+												<p className="text-sm text-slate-400 mb-2">
+													<strong>Subject:</strong>{" "}
+													{preview.subject}
+												</p>
+												<p className="text-sm text-slate-400 mb-4">
+													<strong>To:</strong>{" "}
+													{preview.email}
+												</p>
+												<div
+													className="text-sm text-white leading-relaxed"
+													dangerouslySetInnerHTML={{
+														__html: preview.body,
+													}}
+												/>
+												{attachments.length > 0 && (
+													<div className="mt-4">
+														<p className="text-sm text-slate-400 mb-2">
+															Attachments:
+														</p>
+														<div className="flex flex-wrap gap-2">
+															{attachments.map(
+																(file, idx) => (
+																	<div
+																		key={
+																			idx
+																		}
+																		className="flex items-center bg-slate-800 rounded-[8px] px-3 py-1 text-sm text-white"
+																	>
+																		{
+																			file.name
+																		}
+																	</div>
+																)
+															)}
+														</div>
+													</div>
+												)}
+											</div>
+										</TabsContent>
+									))}
+								</Tabs>
+							</div>
+						)}
+					</div>
+
 					{/* Email Template Editor */}
 					<div className="mb-6">
-						<button
-							onClick={generateEmail}
-							disabled={isGenerating}
-							className="flex items-center justify-center w-full rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 px-5 py-3 font-medium text-white shadow-lg shadow-purple-500/30 transition-all hover:shadow-purple-500/50 hover:scale-[1.02] disabled:opacity-70 mb-4"
-						>
-							{isGenerating ? (
-								<Loader2 className="h-5 w-5 animate-spin mr-2" />
-							) : (
-								<RefreshCw className="h-5 w-5 mr-2" />
-							)}
-							{isGenerating
-								? "Generating..."
-								: "Generate Email Template"}
-						</button>
-
 						{error && (
-							<div className="mb-4 rounded-md bg-red-500/10 p-3 flex items-center text-sm text-red-500">
+							<div className="mb-4 rounded-[12px] bg-red-500/10 p-3 flex items-center text-sm text-red-500">
 								<svg
 									className="h-4 w-4 mr-2"
 									fill="none"
@@ -328,7 +399,7 @@ Format the email as plain text, starting with the subject line, followed by a bl
 						)}
 
 						{(subject || bodyTemplate) && (
-							<div className="rounded-lg border border-slate-700 bg-slate-900/60 backdrop-blur-sm p-4">
+							<div className="rounded-[12px] border border-slate-700 bg-slate-900/60 backdrop-blur-sm p-4">
 								<h3 className="text-sm uppercase tracking-wider text-slate-500 mb-3">
 									Email Template Editor
 								</h3>
@@ -344,7 +415,7 @@ Format the email as plain text, starting with the subject line, followed by a bl
 										onChange={(e) =>
 											setSubject(e.target.value)
 										}
-										className="w-full rounded-lg border border-slate-700 bg-slate-900/60 p-3 text-white shadow-sm backdrop-blur-sm focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
+										className="w-full rounded-[12px] border border-slate-700 bg-slate-900/60 p-3 text-white shadow-sm backdrop-blur-sm focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
 										placeholder="Enter email subject"
 									/>
 								</div>
@@ -367,8 +438,8 @@ Format the email as plain text, starting with the subject line, followed by a bl
 											}
 											className={
 												editor?.isActive("bold")
-													? "bg-purple-500 text-white"
-													: ""
+													? "bg-purple-600 text-white"
+													: "border-slate-700 text-white hover:bg-slate-700/80"
 											}
 										>
 											Bold
@@ -385,8 +456,8 @@ Format the email as plain text, starting with the subject line, followed by a bl
 											}
 											className={
 												editor?.isActive("italic")
-													? "bg-purple-500 text-white"
-													: ""
+													? "bg-purple-600 text-white"
+													: "border-slate-700 text-white hover:bg-slate-700/80"
 											}
 										>
 											Italic
@@ -403,8 +474,8 @@ Format the email as plain text, starting with the subject line, followed by a bl
 											}
 											className={
 												editor?.isActive("bulletList")
-													? "bg-purple-500 text-white"
-													: ""
+													? "bg-purple-600 text-white"
+													: "border-slate-700 text-white hover:bg-slate-700/80"
 											}
 										>
 											Bullet List
@@ -421,8 +492,8 @@ Format the email as plain text, starting with the subject line, followed by a bl
 											}
 											className={
 												editor?.isActive("orderedList")
-													? "bg-purple-500 text-white"
-													: ""
+													? "bg-purple-600 text-white"
+													: "border-slate-700 text-white hover:bg-slate-700/80"
 											}
 										>
 											Ordered List
@@ -437,7 +508,7 @@ Format the email as plain text, starting with the subject line, followed by a bl
 										Attachments
 									</label>
 									<div className="flex items-center">
-										<label className="flex items-center cursor-pointer rounded-lg border border-slate-700 bg-slate-900/60 px-4 py-2 text-white shadow-sm hover:bg-slate-800">
+										<label className="flex items-center cursor-pointer rounded-[12px] border border-slate-700 bg-slate-900/60 px-4 py-2 text-white shadow-sm hover:bg-slate-700/80">
 											<Paperclip className="h-4 w-4 mr-2" />
 											Attach Files
 											<input
@@ -453,7 +524,7 @@ Format the email as plain text, starting with the subject line, followed by a bl
 											{attachments.map((file, index) => (
 												<div
 													key={index}
-													className="flex items-center bg-slate-800 rounded-lg px-3 py-1 text-sm text-white"
+													className="flex items-center bg-slate-800 rounded-[8px] px-3 py-1 text-sm text-white"
 												>
 													{file.name}
 													<button
@@ -471,85 +542,6 @@ Format the email as plain text, starting with the subject line, followed by a bl
 										</div>
 									)}
 								</div>
-							</div>
-						)}
-					</div>
-
-					{/* Preview All Emails */}
-					<div className="mb-6">
-						<button
-							onClick={handlePreviewAll}
-							disabled={!subject || !bodyTemplate}
-							className="flex items-center justify-center w-full rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 px-5 py-3 font-medium text-white shadow-lg shadow-blue-500/30 transition-all hover:shadow-blue-500/50 hover:scale-[1.02] disabled:opacity-70 mb-4"
-						>
-							<Eye className="h-5 w-5 mr-2" />
-							Preview All Emails
-						</button>
-
-						{previews.length > 0 && (
-							<div className="rounded-lg border border-slate-700 bg-slate-900/60 backdrop-blur-sm p-4">
-								<h3 className="text-sm uppercase tracking-wider text-slate-500 mb-3">
-									Email Previews
-								</h3>
-								<Tabs defaultValue="0" className="w-full">
-									<TabsList className="flex flex-wrap gap-2 mb-4 bg-slate-800 p-2 rounded-lg">
-										{previews.map((preview, index) => (
-											<TabsTrigger
-												key={index}
-												value={index.toString()}
-												className="px-4 py-2 rounded-md text-sm text-white data-[state=active]:bg-purple-500 data-[state=active]:text-white"
-											>
-												{preview.company}
-											</TabsTrigger>
-										))}
-									</TabsList>
-									{previews.map((preview, index) => (
-										<TabsContent
-											key={index}
-											value={index.toString()}
-										>
-											<div className="p-4 bg-slate-900 rounded-lg border border-slate-700">
-												<p className="text-sm text-slate-400 mb-1">
-													<strong>Subject:</strong>{" "}
-													{preview.subject}
-												</p>
-												<p className="text-sm text-slate-400 mb-1">
-													<strong>To:</strong>{" "}
-													{preview.email}
-												</p>
-												<div
-													className="text-sm text-white prose prose-invert"
-													dangerouslySetInnerHTML={{
-														__html: preview.body,
-													}}
-												/>
-												{attachments.length > 0 && (
-													<div className="mt-4">
-														<p className="text-sm text-slate-400 mb-1">
-															Attachments:
-														</p>
-														<div className="flex flex-wrap gap-2">
-															{attachments.map(
-																(file, idx) => (
-																	<div
-																		key={
-																			idx
-																		}
-																		className="flex items-center bg-slate-800 rounded-lg px-3 py-1 text-sm text-white"
-																	>
-																		{
-																			file.name
-																		}
-																	</div>
-																)
-															)}
-														</div>
-													</div>
-												)}
-											</div>
-										</TabsContent>
-									))}
-								</Tabs>
 							</div>
 						)}
 					</div>
@@ -578,7 +570,7 @@ Format the email as plain text, starting with the subject line, followed by a bl
 
 						<button
 							disabled={previews.length === 0}
-							className="flex items-center justify-center rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 px-5 py-3 font-medium text-white shadow-lg shadow-purple-500/30 transition-all hover:shadow-purple-500/50 disabled:opacity-70"
+							className="flex items-center justify-center rounded-[12px] bg-gradient-to-r from-purple-600 to-pink-600 px-5 py-3 font-medium text-white shadow-lg shadow-purple-500/30 transition-all hover:shadow-purple-500/50 disabled:opacity-70"
 						>
 							<Send className="h-4 w-4 mr-2" />
 							Send Emails

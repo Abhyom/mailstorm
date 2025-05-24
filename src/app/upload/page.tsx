@@ -12,7 +12,7 @@ import {
 	ChevronRight,
 	X,
 	ArrowUpRight,
-	Info,,
+	Info,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Papa from "papaparse";
@@ -27,38 +27,25 @@ export default function UploadPage() {
 	const [isParsing, setIsParsing] = useState(false);
 	const [isParsed, setIsParsed] = useState(false);
 	const [errors, setErrors] = useState<{
-   
 		name?: string;
-   
 		context?: string;
-   
 		csv?: string;
-   
 		form?: string;
- ;
 	}>({});
 	const [columns, setColumns] = useState<string[]>([]);
 	const [csvData, setCsvData] = useState<any[]>([]);
 	const [step, setStep] = useState(1);
 	const [suggestedMappings, setSuggestedMappings] = useState<{
-   
 		companyName?: string;
-   
 		email?: string;
- ;
 	}>({});
 	const [columnMapping, setColumnMapping] = useState<{
-   
 		companyName?: string;
-   
 		email?: string;
- ;
 	}>({});
 	const [previewData, setPreviewData] = useState<
-		
-    { company: string; email: string }[]
-	
-  >([]);
+		{ company: string; email: string }[]
+	>([]);
 
 	// Page load animation
 	useEffect(() => {
@@ -282,6 +269,22 @@ export default function UploadPage() {
 
 	return (
 		<div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-black via-purple-950 to-black overflow-x-hidden">
+			<style>{`
+        textarea::-webkit-scrollbar {
+          width: 4px;
+        }
+        textarea::-webkit-scrollbar-track {
+          background: rgba(30, 41, 59, 0.5); /* slate-800/50 */
+          border-radius: 2px;
+        }
+        textarea::-webkit-scrollbar-thumb {
+          background: #9333ea; /* purple-500 */
+          border-radius: 2px;
+        }
+        textarea::-webkit-scrollbar-thumb:hover {
+          background: #a855f7; /* purple-400 */
+        }
+      `}</style>
 			<div
 				className={`w-full max-w-4xl px-4 py-8 md:py-16 transition-all duration-1000 ease-out ${
 					pageLoaded
@@ -453,9 +456,9 @@ export default function UploadPage() {
 										errors.context
 											? "border-red-500 ring-1 ring-red-500"
 											: "border-slate-700"
-									} bg-slate-900/60 p-3 text-white shadow-sm backdrop-blur-sm transition-all focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500`}
-									placeholder="e.g., Applying for software engineering internship opportunities"
-									rows={3}
+									} bg-slate-900/60 p-3 text-white shadow-sm backdrop-blur-sm transition-all focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500 resize-y scrollbar scrollbar-thin scrollbar-track-slate-800/50 scrollbar-thumb-purple-500 hover:scrollbar-thumb-purple-400`}
+									placeholder="Enter the context for your email to ensure it’s tailored to your needs. Include your full name, current status (e.g., senior at UC Berkeley, or software engineer at Google), and relevant details like your university, previous jobs, or key skills. For best results, you can copy-paste your resume or a summary of your qualifications to provide comprehensive information. Example: 'I’m Sarah Johnson, a senior Computer Science major at UC Berkeley, seeking a software engineering internship. My skills include Python, Java, and cloud computing, with projects in machine learning and web development.'"
+									rows={6}
 								/>
 								{errors.context && (
 									<div className="mt-2 flex items-center text-sm text-red-500">

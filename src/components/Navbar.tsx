@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useSession, signIn, signOut } from "next-auth/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation"; // Import usePathname
+import Image from "next/image";
 
 export function Navbar() {
 	const { data: session, status } = useSession();
@@ -17,8 +18,24 @@ export function Navbar() {
 	return (
 		<nav className="bg-black/80 backdrop-blur-md p-4 fixed w-full top-0 z-50 shadow-[0_0_10px_rgba(147,51,234,0.3)]">
 			<div className="max-w-7xl mx-auto flex justify-between items-center">
-				<Link href="/" className="text-2xl font-bold text-white">
-					MailStorm
+				<Link
+					href="/"
+					className="flex items-center space-x-2 group transition-all duration-300"
+				>
+					<div className="relative flex items-center justify-center h-4 w-14 overflow-hidden">
+						{/* Main logo with tilt and effects */}
+						<Image
+							src="/logo.png" // Place your PNG in the public folder
+							alt="MailStorm Logo"
+							width={56}
+							height={56}
+							className="transform -rotate-12 transition-all duration-300 group-hover:rotate-0 group-hover:scale-110 drop-shadow-lg group-hover:drop-shadow-[0_0_8px_rgba(147,51,234,0.4)]"
+						/>
+					</div>
+					<span className="text-2xl font-bold text-white group-hover:text-purple-300 transition-colors duration-300">
+						MailStorm
+					</span>
+					        
 				</Link>
 
 				<div className="relative">
