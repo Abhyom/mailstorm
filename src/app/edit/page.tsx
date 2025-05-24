@@ -56,6 +56,25 @@ export default function EditPage() {
 		setPreviews(updatedPreviews);
 	}, [subject, bodyTemplate, campaignData]);
 
+	// Watch for changes in subject, bodyTemplate, or campaignData and update previews
+	useEffect(() => {
+		if (!campaignData || !subject || !bodyTemplate) return;
+
+		const updatedPreviews = campaignData.csvData.map((recipient) => {
+			const companyName =
+				recipient[campaignData.columnMapping.companyName!];
+			const emailAddress = recipient[campaignData.columnMapping.email!];
+			const body = bodyTemplate.replace(/{companyName}/g, companyName);
+			return {
+				company: companyName,
+				email: emailAddress,
+				subject,
+				body,
+			};
+		});
+
+		setPreviews(updatedPreviews);
+	}, [subject, bodyTemplate, campaignData]);
 	// Initialize Tiptap editor for email body
 	const editor = useEditor({
 		extensions: [StarterKit],
@@ -72,6 +91,32 @@ export default function EditPage() {
 		},
 	});
 
+	// Convert plain text to HTML for Tiptap
+	const convertPlainTextToHTML = (text: string) => {
+		if (!text) return "";
+		// Split the text into lines, trim each line, and filter out empty lines
+		const lines = text
+			.split("\n")
+			.map((line) => line.trim())
+			.filter((line) => line);
+		// Wrap each line in a <p> tag, unless it already contains HTML tags
+		const htmlLines = lines.map((line) =>
+			line.includes("<") ? line : `<p>${line}</p>`
+		);
+		return htmlLines.join("");
+	};
+
+	// Update editor content when bodyTemplate changes
+	useEffect(() => {
+		if (editor && bodyTemplate) {
+			console.log("Updating editor with bodyTemplate:", bodyTemplate);
+			// Convert plain text to HTML
+			const htmlContent = convertPlainTextToHTML(bodyTemplate);
+			console.log("Converted HTML content:", htmlContent);
+			editor.commands.setContent(htmlContent);
+			console.log("Editor content after update:", editor.getHTML());
+		}
+	}, [bodyTemplate, editor]);
 	// Convert plain text to HTML for Tiptap
 	const convertPlainTextToHTML = (text: string) => {
 		if (!text) return "";

@@ -137,8 +137,8 @@ export default function UploadPage() {
 				})
 			);
 
-			// Simulate a delay for demonstration
-			await new Promise((resolve) => setTimeout(resolve, 1500));
+			//   // Simulate a delay for demonstration
+			//   await new Promise((resolve) => setTimeout(resolve, 1500));
 
 			// Redirect to edit page
 			router.push("/edit");
