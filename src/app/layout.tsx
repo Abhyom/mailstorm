@@ -18,6 +18,9 @@ export const metadata: Metadata = {
 	title: "MailStorm",
 	description:
 		"Upload your CSV and launch a storm of personalized bulk cold emails.",
+	icons: {
+		icon: "/logo.png",
+	},
 };
 
 export default function RootLayout({
