@@ -566,7 +566,7 @@ Format the email as plain text, starting with the subject line, followed by a bl
 													<label className="text-sm text-slate-400 mb-1 block">
 														Body
 													</label>
-													<div className="mb-2 flex flex-wrap gap-2 p-2 bg-slate-800 border border-slate-700 rounded-[12px]">
+													<div className="mb-2 flex flex-wrap gap-2 p-2 border border-slate-700 rounded-[12px] bg-gradient-to-br from-purple-600 via-blue-500 to-teal-400 opacity-70">
 														{/* Formatting Buttons with Tooltips */}
 														<Tooltip.Root>
 															<Tooltip.Trigger
@@ -584,8 +584,8 @@ Format the email as plain text, starting with the subject line, followed by a bl
 																		editor?.isActive(
 																			"bold"
 																		)
-																			? "bg-purple-600"
-																			: "bg-slate-900/60 hover:bg-slate-700"
+																			? "bg-black"
+																			: "bg-slate-900/60 hover:bg-slate-900"
 																	}`}
 																	disabled={
 																		!editor

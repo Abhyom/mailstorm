@@ -33,7 +33,7 @@ export function Navbar() {
 	}, []);
 
 	return (
-		<nav className="bg-black/80 backdrop-blur-md px-4 py-2 fixed w-full top-0 z-50 shadow-[0_0_10px_rgba(147,51,234,0.3)]">
+		<nav className="backdrop-blur-2xl bg-transparent/90 border-b border-white/20 px-4 py-2 fixed w-full top-0 z-50 shadow-[0_0_10px_rgba(147,51,234,0.3)]">
 			<div className="max-w-7xl mx-auto flex justify-between items-center h-[60px]">
 				{/* Logo */}
 				<Link
@@ -47,8 +47,18 @@ export function Navbar() {
 						height={40}
 						className="transition-all duration-300 drop-shadow-lg w-20 md:w-24 object-contain"
 					/>
-					<span className="text-lg md:text-3xl mt-3 font-bold text-white transition-colors duration-300">
-						Mail
+					<span className="text-lg md:text-3xl mt-3 font-bold transition-colors duration-300">
+						<span
+							className="bg-clip-text text-transparent"
+							style={{
+								background:
+									"linear-gradient(to top left, #8e44ad, #c27aff, #e0b3ff)",
+								WebkitBackgroundClip: "text",
+								WebkitTextFillColor: "transparent",
+							}}
+						>
+							Mail
+						</span>
 						<span
 							className="bg-clip-text text-transparent"
 							style={{

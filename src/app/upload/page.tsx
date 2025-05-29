@@ -47,7 +47,7 @@ export default function UploadPage() {
 		{ company: string; email: string }[]
 	>([]);
 	const [currentPage, setCurrentPage] = useState(1);
-	const itemsPerPage = 5; // Number of items per page
+	const itemsPerPage = 10; // Number of items per page
 
 	const paginatedData = previewData.slice(
 		(currentPage - 1) * itemsPerPage,
@@ -144,9 +144,6 @@ export default function UploadPage() {
 				})
 			);
 
-			//   // Simulate a delay for demonstration
-			//   await new Promise((resolve) => setTimeout(resolve, 1500));
-
 			// Redirect to edit page
 			router.push("/edit");
 		} catch (error) {
@@ -181,6 +178,16 @@ export default function UploadPage() {
 			complete: (result) => {
 				const { data, errors: parseErrors, meta } = result;
 
+				// Filter out rows where all values are empty or whitespace
+				const cleanedData = data.filter((row: any) => {
+					if (!row || typeof row !== "object") return false;
+					const values = Object.values(row);
+					return values.some((value) => {
+						if (value === null || value === undefined) return false;
+						return value.toString().trim() !== "";
+					});
+				});
+
 				setIsParsing(false);
 
 				if (parseErrors.length > 0) {
@@ -188,9 +195,17 @@ export default function UploadPage() {
 					return;
 				}
 
+				if (cleanedData.length === 0) {
+					setErrors({
+						...errors,
+						csv: "The CSV file contains no valid data",
+					});
+					return;
+				}
+
 				const headers = meta.fields || [];
 				setColumns(headers);
-				setCsvData(data);
+				setCsvData(cleanedData); // Store the cleaned data
 				setIsParsed(true);
 
 				// Remove any CSV-related errors if parsing succeeds
