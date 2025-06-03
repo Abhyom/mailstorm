@@ -1,0 +1,119 @@
+// prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  image         String?
+  googleId      String    @unique
+  accessToken   String?   // Store Gmail access token
+  refreshToken  String?   // Store Gmail refresh token
+  plan          Plan      @default(FREE)
+  emailsSentToday Int     @default(0)
+  emailsSentThisMonth Int @default(0)
+  totalEmailsSent Int     @default(0)
+  lastEmailSentAt DateTime?
+  lastResetDate   DateTime @default(now())
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  campaigns     Campaign[]
+  emailLogs     EmailLog[]
+  billing       Billing[] // Add billing relation
+  
+  @@map("users")
+}
+
+model Campaign {
+  id          String   @id @default(cuid())
+  userId      String
+  name        String
+  subject     String
+  bodyTemplate String
+  totalRecipients Int
+  emailsSent  Int      @default(0)
+  emailsFailed Int     @default(0)
+  status      CampaignStatus @default(DRAFT)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emailLogs   EmailLog[]
+  
+  @@map("campaigns")
+}
+
+model EmailLog {
+  id          String   @id @default(cuid())
+  campaignId  String
+  userId      String
+  recipientEmail String
+  recipientName  String?
+  status      EmailStatus
+  errorMessage String?
+  sentAt      DateTime?
+  createdAt   DateTime @default(now())
+  
+  campaign    Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  analytics   EmailAnalytics? // Add analytics relation
+  
+  @@map("email_logs")
+}
+
+model Billing {
+  id          String   @id @default(cuid())
+  userId      String
+  amount      Float
+  emailCount  Int
+  description String
+  createdAt   DateTime @default(now())
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("billing")
+}
+
+model EmailAnalytics {
+  id          String   @id @default(cuid())
+  emailLogId  String   @unique
+  openedAt    DateTime?
+  clickCount  Int      @default(0)
+  lastClickedAt DateTime?
+  createdAt   DateTime @default(now())
+
+  emailLog    EmailLog @relation(fields: [emailLogId], references: [id], onDelete: Cascade)
+
+  @@map("email_analytics")
+}
+
+enum Plan {
+  FREE
+  STARTER
+  PRO
+  ENTERPRISE
+  PAY_PER_USE
+}
+
+enum CampaignStatus {
+  DRAFT
+  SENDING
+  COMPLETED
+  FAILED
+  PAUSED
+}
+
+enum EmailStatus {
+  PENDING
+  SENT
+  FAILED
+  BOUNCED
+}

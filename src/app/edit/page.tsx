@@ -1,3 +1,4 @@
+// src/app/edit/page.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -29,6 +30,7 @@ import {
 	Image as ImageIcon,
 } from "lucide-react";
 import * as Tooltip from "@radix-ui/react-tooltip";
+import ProgressModal from "@/components/ProgressModal"; // Import ProgressModal
 
 export default function EditPage() {
 	const router = useRouter();
@@ -46,6 +48,7 @@ export default function EditPage() {
 	const [previews, setPreviews] = useState<
 		{ company: string; email: string; subject: string; body: string }[]
 	>([]);
+	const [isProgressModalOpen, setIsProgressModalOpen] = useState(false); // State for ProgressModal
 
 	// Retrieve campaign data from sessionStorage on mount
 	useEffect(() => {
@@ -287,6 +290,11 @@ Format the email as plain text, starting with the subject line, followed by a bl
 		if (url) {
 			editor.chain().focus().setImage({ src: url }).run();
 		}
+	};
+
+	// Handle sending emails by opening the ProgressModal
+	const handleSendEmails = () => {
+		setIsProgressModalOpen(true);
 	};
 
 	if (!campaignData) {
@@ -1207,12 +1215,49 @@ Format the email as plain text, starting with the subject line, followed by a bl
 														</div>
 													)}
 												</div>
+
+												{/* Send Emails Button */}
+												<button
+													onClick={handleSendEmails}
+													disabled={
+														isGenerating ||
+														!subject ||
+														!bodyTemplate
+													}
+													className="flex items-center justify-center w-full rounded-[12px] bg-gradient-to-r from-purple-600 to-pink-600 px-5 py-3 font-medium text-white shadow-lg shadow-purple-500/30 transition-all hover:shadow-purple-500/50 hover:scale-[1.02] disabled:opacity-70"
+												>
+													<Send className="h-5 w-5 mr-2" />
+													Send Emails
+												</button>
 											</div>
 										)}
 									</TabsContent>
 								</Tabs>
 							</div>
 						)}
+
+						{/* ProgressModal Component */}
+						<ProgressModal
+							isOpen={isProgressModalOpen}
+							onClose={() => setIsProgressModalOpen(false)}
+							campaignData={{
+								name: campaignData.name,
+								subject,
+								bodyTemplate,
+								recipients: campaignData.csvData.map(
+									(recipient) => ({
+										email: recipient[
+											campaignData.columnMapping.email!
+										],
+										companyName:
+											recipient[
+												campaignData.columnMapping
+													.companyName!
+											],
+									})
+								),
+							}}
+						/>
 					</div>
 				</div>
 			</Tooltip.Provider>
