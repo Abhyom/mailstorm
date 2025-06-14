@@ -1,4 +1,3 @@
-// src/app/edit/page.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -30,7 +29,7 @@ import {
 	Image as ImageIcon,
 } from "lucide-react";
 import * as Tooltip from "@radix-ui/react-tooltip";
-import ProgressModal from "@/components/ProgressModal"; // Import ProgressModal
+import ProgressModal from "@/components/ProgressModal";
 
 export default function EditPage() {
 	const router = useRouter();
@@ -45,10 +44,13 @@ export default function EditPage() {
 	const [isGenerating, setIsGenerating] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [attachments, setAttachments] = useState<File[]>([]);
+	const [attachmentData, setAttachmentData] = useState<
+		{ filename: string; content: string; mimeType: string }[]
+	>([]);
 	const [previews, setPreviews] = useState<
 		{ company: string; email: string; subject: string; body: string }[]
 	>([]);
-	const [isProgressModalOpen, setIsProgressModalOpen] = useState(false); // State for ProgressModal
+	const [isProgressModalOpen, setIsProgressModalOpen] = useState(false);
 
 	// Retrieve campaign data from sessionStorage on mount
 	useEffect(() => {
@@ -151,6 +153,7 @@ export default function EditPage() {
 		setSubject("");
 		setBodyTemplate("");
 		setAttachments([]);
+		setAttachmentData([]);
 		setPreviews([]);
 
 		try {
@@ -253,8 +256,10 @@ Format the email as plain text, starting with the subject line, followed by a bl
 		}
 	};
 
-	// Handle file attachments
-	const handleAttachFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
+	// Handle file attachments and convert to base64
+	const handleAttachFiles = async (
+		e: React.ChangeEvent<HTMLInputElement>
+	) => {
 		const files = Array.from(e.target.files || []);
 		const maxSize = 5 * 1024 * 1024; // 5MB limit per file
 		const validFiles = files.filter((file) => {
@@ -264,12 +269,28 @@ Format the email as plain text, starting with the subject line, followed by a bl
 			}
 			return true;
 		});
+
+		const newAttachments = await Promise.all(
+			validFiles.map(async (file) => {
+				const arrayBuffer = await file.arrayBuffer();
+				const base64Content =
+					Buffer.from(arrayBuffer).toString("base64");
+				return {
+					filename: file.name,
+					content: base64Content,
+					mimeType: file.type || "application/octet-stream",
+				};
+			})
+		);
+
 		setAttachments((prev) => [...prev, ...validFiles]);
+		setAttachmentData((prev) => [...prev, ...newAttachments]);
 		e.target.value = "";
 	};
 
 	const handleRemoveAttachment = (index: number) => {
 		setAttachments((prev) => prev.filter((_, i) => i !== index));
+		setAttachmentData((prev) => prev.filter((_, i) => i !== index));
 	};
 
 	// Handle link insertion
@@ -1215,25 +1236,24 @@ Format the email as plain text, starting with the subject line, followed by a bl
 														</div>
 													)}
 												</div>
-
-												{/* Send Emails Button */}
-												<button
-													onClick={handleSendEmails}
-													disabled={
-														isGenerating ||
-														!subject ||
-														!bodyTemplate
-													}
-													className="flex items-center justify-center w-full rounded-[12px] bg-gradient-to-r from-purple-600 to-pink-600 px-5 py-3 font-medium text-white shadow-lg shadow-purple-500/30 transition-all hover:shadow-purple-500/50 hover:scale-[1.02] disabled:opacity-70"
-												>
-													<Send className="h-5 w-5 mr-2" />
-													Send Emails
-												</button>
 											</div>
 										)}
 									</TabsContent>
 								</Tabs>
 							</div>
+						)}
+						{/* Send Emails Button */}
+						{(previews.length > 0 || subject || bodyTemplate) && (
+							<button
+								onClick={handleSendEmails}
+								disabled={
+									isGenerating || !subject || !bodyTemplate
+								}
+								className="flex items-center justify-center w-full rounded-[12px] bg-gradient-to-r from-purple-600 to-pink-600 px-5 py-3 font-medium text-white shadow-lg shadow-purple-500/30 transition-all hover:shadow-purple-500/50 hover:scale-[1.02] disabled:opacity-70 mb-6"
+							>
+								<Send className="h-5 w-5 mr-2" />
+								Send Emails
+							</button>
 						)}
 
 						{/* ProgressModal Component */}
@@ -1256,6 +1276,7 @@ Format the email as plain text, starting with the subject line, followed by a bl
 											],
 									})
 								),
+								attachments: attachmentData,
 							}}
 						/>
 					</div>

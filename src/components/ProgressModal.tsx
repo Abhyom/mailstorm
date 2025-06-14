@@ -1,4 +1,3 @@
-// src/components/ProgressModal.tsx
 import { useState, useEffect } from "react";
 import { X } from "lucide-react";
 
@@ -108,6 +107,15 @@ export default function ProgressModal({
 							{campaignData.recipients.length}
 						</span>
 					</div>
+					{campaignData.attachments &&
+						campaignData.attachments.length > 0 && (
+							<div className="flex justify-between">
+								<span>Attachments:</span>
+								<span className="text-white">
+									{campaignData.attachments.length}
+								</span>
+							</div>
+						)}
 					{status === "done" && (
 						<>
 							<div className="flex justify-between">

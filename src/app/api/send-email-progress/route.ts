@@ -1,7 +1,7 @@
 // src/app/api/send-email-progress/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/app/api/auth/[...nextauth]/route";
-import { prisma } from "../../../../lib/prisma";
+import { prisma } from "../../../lib/prisma";
 
 export async function GET(request: NextRequest) {
 	const session = await auth();

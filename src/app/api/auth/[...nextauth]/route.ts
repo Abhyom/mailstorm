@@ -2,10 +2,7 @@
 import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import type { NextAuthConfig } from "next-auth";
-import {
-	getUserWithLimits,
-	createOrUpdateUser,
-} from "../../../../../lib/prisma";
+import { getUserWithLimits, createOrUpdateUser } from "../../../../lib/prisma";
 
 // Define the custom session type
 declare module "next-auth" {
