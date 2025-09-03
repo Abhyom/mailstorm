@@ -316,7 +316,7 @@ export class GmailService {
   <div style="height: 1px; background-color: #2d2d44; margin: 16px auto; width: 60%;"></div>
 
   <!-- Sent with + Button -->
-  <div style="font-size: 13px; color: #71717a; margin-bottom: 12px;">Sent with MailStorm’s powerful email engine</div>
+  <div style="font-size: 13px; color: #71717a; margin-bottom: 12px;">Crafted by Abhijeet Om</div>
 
   <a href="https://mailstorm.com" style="display: inline-block; background: linear-gradient(135deg, #8b5cf6, #6366f1); color: white; text-decoration: none; padding: 10px 20px; font-size: 13px; font-weight: 600; border-radius: 8px; transition: background 0.3s ease;">Get Your Free Account</a>
 
