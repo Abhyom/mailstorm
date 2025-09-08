@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/app/api/auth/[...nextauth]/route";
+import { auth } from "@/lib/auth";
 import {
 	getUserWithLimits,
 	checkUserLimit,
@@ -160,18 +160,6 @@ export async function POST(request: NextRequest) {
 								/{companyName}/g,
 								recipient.companyName || "there"
 							);
-
-							const result = await gmailService.sendEmail({
-								to: recipient.email,
-								subject,
-								htmlBody: personalizedBody,
-								fromEmail: user.email,
-								fromName: user.name || "MailStorm User",
-								attachments: processedAttachments,
-								userId: user.id,
-								emailLogId: emailLog.id,
-								plan: user.plan,
-							});
 
 							await prisma.emailLog.update({
 								where: { id: emailLog.id },

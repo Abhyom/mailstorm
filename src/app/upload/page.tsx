@@ -12,7 +12,6 @@ import {
 	ChevronRight,
 	X,
 	ArrowUpRight,
-	Info,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Papa from "papaparse";
